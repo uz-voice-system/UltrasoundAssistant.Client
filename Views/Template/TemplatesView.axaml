@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrasoundAssistant.DoctorClient.ViewModels.Template"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Template.TemplatesView"
+             x:DataType="vm:TemplatesViewModel"
+             x:Name="Root"
+             AttachedToVisualTree="UserControl_OnAttachedToVisualTree">
+
+  <Grid Margin="10" RowDefinitions="Auto,*,Auto" ColumnDefinitions="2*,*">
+
+    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10">
+      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
+      <Button Content="Обновить" Command="{Binding LoadTemplatesCommand}" />
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" Grid.Column="0" Height="400">
+      <DataGrid ItemsSource="{Binding Templates}" AutoGenerateColumns="False" GridLinesVisibility="All">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="ID" Binding="{Binding ShortId}" Width="180" />
+          <DataGridTextColumn Header="Название шаблона" Binding="{Binding Name}" Width="*" />
+          <DataGridTextColumn Header="Ключевых слов" Binding="{Binding Keywords.Count}" Width="140" />
+          <DataGridTemplateColumn Header="Действия" Width="220">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Button Content="Изменить"
+                          Command="{Binding DataContext.EditTemplateCommand, ElementName=Root}"
+                          CommandParameter="{Binding}" />
+                  <Button Content="Удалить"
+                          Command="{Binding DataContext.DeleteTemplateCommand, ElementName=Root}"
+                          CommandParameter="{Binding}" />
+                </StackPanel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="0,10,0,0">
+      <Button Content="Добавить шаблон" Command="{Binding AddTemplateCommand}" />
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
+    </StackPanel>
+
+    <Border Grid.Row="0"
+            Grid.RowSpan="3"
+            Grid.Column="1"
+            Background="#EEE"
+            Padding="10"
+            Margin="10,0,0,0"
+            IsVisible="{Binding IsEditPanelVisible}">
+      <StackPanel Spacing="10">
+
+        <TextBlock Text="{Binding EditPanelTitle}" FontWeight="Bold" FontSize="16" />
+
+        <TextBlock Text="Название шаблона:" />
+        <TextBox Text="{Binding EditTemplateName, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock Text="Ключевые слова шаблона:" FontWeight="Bold" Margin="0,10,0,0" />
+
+        <ScrollViewer Height="220">
+          <DataGrid ItemsSource="{Binding EditableKeywords}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Фраза" Binding="{Binding Phrase}" Width="*" />
+              <DataGridTextColumn Header="Имя поля" Binding="{Binding FieldName}" Width="*" />
+              <DataGridTemplateColumn Header="Действия" Width="110">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <Button Content="Удалить"
+                            Command="{Binding DataContext.RemoveKeywordCommand, ElementName=Root}"
+                            CommandParameter="{Binding}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+        </ScrollViewer>
+
+        <Border Background="#DDD" Padding="8" CornerRadius="4">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Добавить ключевое слово" FontWeight="Bold" />
+
+            <TextBlock Text="Фраза врача:" />
+            <TextBox Text="{Binding NewKeywordPhrase, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Text="Имя поля отчёта:" />
+            <TextBox Text="{Binding NewKeywordFieldName, UpdateSourceTrigger=PropertyChanged}" />
+
+            <Button Content="Добавить ключевое слово"
+                    HorizontalAlignment="Left"
+                    Command="{Binding AddKeywordCommand}" />
+          </StackPanel>
+        </Border>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,20,0,0">
+          <Button Content="Сохранить" Command="{Binding SaveTemplateCommand}" />
+          <Button Content="Отмена" Command="{Binding CancelEditCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+  </Grid>
+</UserControl>

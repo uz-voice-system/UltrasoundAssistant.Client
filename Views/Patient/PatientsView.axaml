@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrasoundAssistant.DoctorClient.ViewModels.Patient"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Patient.PatientsView"
+             x:DataType="vm:PatientsViewModel"
+             x:Name="Root"
+             AttachedToVisualTree="UserControl_OnAttachedToVisualTree">
+
+  <Grid Margin="10" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+
+    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
+      <TextBox Width="250"
+               Watermark="Поиск по ФИО"
+               Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+      <Button Content="Найти" Command="{Binding SearchPatientsCommand}" />
+      <Button Content="Обновить" Command="{Binding LoadPatientsCommand}" />
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" Grid.Column="0" Height="400">
+      <DataGrid ItemsSource="{Binding Patients}" AutoGenerateColumns="False">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="ID" Binding="{Binding ShortId}" Width="150" />
+          <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="250" />
+          <DataGridTextColumn Header="Дата рождения" Binding="{Binding BirthDate}" Width="140" />
+          <DataGridTextColumn Header="Пол" Binding="{Binding Gender}" Width="100" />
+          <DataGridTemplateColumn Header="Действия" Width="220">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Button Content="Изменить"
+                          Command="{Binding DataContext.EditPatientCommand, ElementName=Root}"
+                          CommandParameter="{Binding}" />
+                  <Button Content="Удалить"
+                          Command="{Binding DataContext.DeletePatientCommand, ElementName=Root}"
+                          CommandParameter="{Binding}" />
+                </StackPanel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="0,10,0,0">
+      <Button Content="Добавить пациента" Command="{Binding AddPatientCommand}" />
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
+    </StackPanel>
+
+    <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1"
+            Background="#EEE"
+            Padding="10"
+            Margin="10,0,0,0"
+            IsVisible="{Binding IsEditPanelVisible}">
+      <StackPanel Spacing="10">
+        <TextBlock Text="{Binding EditPanelTitle}" FontWeight="Bold" FontSize="16" />
+
+        <TextBlock Text="ФИО:" />
+        <TextBox Text="{Binding EditFullName, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock Text="Дата рождения:" />
+        <DatePicker SelectedDate="{Binding EditBirthDate}" />
+
+        <TextBlock Text="Пол:" />
+        <ComboBox ItemsSource="{Binding Genders}"
+                  SelectedItem="{Binding EditSelectedGender}" />
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,20,0,0">
+          <Button Content="Сохранить" Command="{Binding SavePatientCommand}" />
+          <Button Content="Отмена" Command="{Binding CancelEditCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+  </Grid>
+</UserControl>

@@ -1,0 +1,142 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:reportVm="using:UltrasoundAssistant.DoctorClient.ViewModels.Report"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Report.ReportEditorView">
+
+  <Grid Margin="10" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="3*,2*">
+
+    <!-- Верхняя панель -->
+    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
+      <TextBlock Text="{Binding SuccessMessage}" Foreground="Green" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- Информация об отчёте -->
+    <Border Grid.Row="1" Grid.Column="0" Background="#EEEEEE" Padding="10" Margin="0,10,10,10">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Редактирование черновика" FontSize="18" FontWeight="Bold" />
+
+        <TextBlock Text="Пациент:" />
+        <TextBox Text="{Binding PatientName}" IsReadOnly="True" />
+
+        <TextBlock Text="Шаблон:" />
+        <TextBox Text="{Binding TemplateName}" IsReadOnly="True" />
+      </StackPanel>
+    </Border>
+
+    <!-- Блок записи -->
+    <Border Grid.Row="1" Grid.Column="1" Background="#EEEEEE" Padding="10" Margin="0,10,0,10">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Голосовой ввод" FontSize="18" FontWeight="Bold" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Content="Начать запись"
+                  Command="{Binding StartRecordingCommand}"
+                  IsEnabled="{Binding CanStartRecording}" />
+          <Button Content="Пауза"
+                  Command="{Binding PauseRecordingCommand}"
+                  IsEnabled="{Binding CanPauseRecording}" />
+          <Button Content="Остановить запись"
+                  Command="{Binding StopRecordingCommand}"
+                  IsEnabled="{Binding CanStopRecording}" />
+        </StackPanel>
+
+        <TextBlock Text="Распознанный текст:" FontWeight="Bold" />
+        <TextBox Text="{Binding RecognizedText}"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 Height="120" />
+      </StackPanel>
+    </Border>
+
+    <!-- Поля отчёта -->
+    <Border Grid.Row="2" Grid.Column="0" Background="#EEEEEE" Padding="10" Margin="0,0,10,10">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Поля отчёта" FontSize="18" FontWeight="Bold" />
+
+        <ScrollViewer Height="420">
+          <DataGrid ItemsSource="{Binding ReportFields}"
+                    AutoGenerateColumns="False"
+                    GridLinesVisibility="All"
+                    BorderBrush="Gray"
+                    BorderThickness="1">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Ключевое слово"
+                    x:DataType="reportVm:ReportFieldEditorItem"
+                    Binding="{Binding Keyword}"
+                    Width="220"
+                    IsReadOnly="True" />
+              <DataGridTextColumn Header="Значение"
+                    x:DataType="reportVm:ReportFieldEditorItem"
+                    Binding="{Binding Value}"
+                    Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+
+    <!-- Неуверенно распознано -->
+    <Border Grid.Row="2" Grid.Column="1" Background="#EEEEEE" Padding="10" Margin="0,0,0,10">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Неуверенно распознано / требует проверки"
+                   FontSize="18"
+                   FontWeight="Bold" />
+
+        <TextBlock Text="Сюда попадает то, что система не смогла уверенно сопоставить с полем шаблона."
+                   TextWrapping="Wrap" />
+
+        <TextBox Text="{Binding UnmatchedRecognitions}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 VerticalContentAlignment="Top"
+                 Height="420" />
+      </StackPanel>
+    </Border>
+
+    <!-- Нижняя панель -->
+    <StackPanel Grid.Row="3" Grid.ColumnSpan="2"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="10">
+        <Button Content="Сохранить"
+                Command="{Binding SaveReportCommand}"
+                IsEnabled="{Binding CanSave}" />
+        <Button Content="Завершить отчёт"
+                Command="{Binding CompleteReportCommand}"
+                IsEnabled="{Binding CanComplete}" />
+    </StackPanel>
+
+      <Border Grid.RowSpan="4"
+        Grid.ColumnSpan="2"
+        Background="#80000000"
+        IsVisible="{Binding IsRecognizing}"
+        ZIndex="1000">
+      <Grid>
+        <Border Width="320"
+                Padding="20"
+                CornerRadius="12"
+                Background="White"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+          <StackPanel Spacing="12">
+            <TextBlock Text="Идёт распознавание..."
+                       FontSize="20"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Пожалуйста, дождитесь окончания обработки аудио."
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center" />
+
+            <ProgressBar IsIndeterminate="True"
+                         Height="16" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

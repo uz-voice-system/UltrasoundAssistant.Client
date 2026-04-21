@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UltrasoundAssistant.DoctorClient.ViewModels.Report"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Report.ReportsView"
+             x:DataType="vm:ReportsViewModel"
+             x:Name="Root"
+             AttachedToVisualTree="UserControl_OnAttachedToVisualTree">
+
+  <Grid Margin="10" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+
+    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
+      <Button Content="Обновить" Command="{Binding LoadReportsCommand}" />
+      <ComboBox ItemsSource="{Binding Statuses}"
+                SelectedItem="{Binding SelectedStatus}"
+                Width="180" />
+      <Button Content="Применить фильтр" Command="{Binding FilterReportsCommand}" />
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" Grid.Column="0" Height="400">
+      <DataGrid ItemsSource="{Binding Reports}" AutoGenerateColumns="False">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="ID" Binding="{Binding ShortId}" Width="150" />
+          <DataGridTextColumn Header="Пациент" Binding="{Binding PatientName}" Width="220" />
+          <DataGridTextColumn Header="Шаблон" Binding="{Binding TemplateName}" Width="200" />
+          <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120" />
+          <DataGridTextColumn Header="Дата" Binding="{Binding UpdatedAt}" Width="180" />
+          <DataGridTemplateColumn Header="Действия" Width="260">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Button Content="Просмотр"
+                        Command="{Binding DataContext.PreviewReportCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+                <Button Content="Редактировать"
+                        Command="{Binding DataContext.EditReportCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+                <Button Content="Удалить"
+                        Command="{Binding DataContext.DeleteReportCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+              </StackPanel>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="0,10,0,0">
+      <Button Content="Создать отчёт" Command="{Binding AddReportCommand}" />
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
+    </StackPanel>
+
+    <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1"
+            Background="#EEE"
+            Padding="10"
+            Margin="10,0,0,0"
+            IsVisible="{Binding IsDetailsPanelVisible}">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Информация об отчёте" FontWeight="Bold" FontSize="16" />
+
+        <TextBlock Text="Пациент:" />
+        <TextBlock Text="{Binding SelectedReport.PatientName}" />
+
+        <TextBlock Text="Шаблон:" />
+        <TextBlock Text="{Binding SelectedReport.TemplateName}" />
+
+        <TextBlock Text="Статус:" />
+        <TextBlock Text="{Binding SelectedReport.Status}" />
+
+        <TextBlock Text="Содержимое:" FontWeight="Bold" Margin="0,10,0,0" />
+        <TextBox Text="{Binding SelectedReportContentText}"
+                 AcceptsReturn="True"
+                 IsReadOnly="True"
+                 Height="220"
+                 TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,20,0,0">
+          <Button Content="Закрыть" Command="{Binding CloseDetailsCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+  </Grid>
+</UserControl>

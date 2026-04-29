@@ -54,4 +54,51 @@ public class ReportApiService : ApiServiceBase
         var response = await _httpClient.SendAsync(request);
         return await ReadCommandResultAsync(response, "Не удалось удалить отчёт.");
     }
+
+    public async Task<QueryResult<string>> DownloadPdfAsync(Guid reportId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/reports/{reportId}/pdf");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+
+                return QueryResult<string>.Failure(
+                    string.IsNullOrWhiteSpace(error) ? $"Не удалось сформировать PDF: {(int)response.StatusCode}" : error);
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+
+            if (pdfBytes.Length == 0)
+                return QueryResult<string>.Failure("Сервер вернул пустой PDF.");
+
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "UltrasoundAssistant", "Reports");
+
+            Directory.CreateDirectory(folder);
+
+            var filePath = Path.Combine(folder, $"report-{reportId:N}.pdf");
+
+            await File.WriteAllBytesAsync(filePath, pdfBytes);
+
+            return QueryResult<string>.Success(filePath);
+        }
+        catch (Exception ex)
+        {
+            return QueryResult<string>.Failure($"Ошибка загрузки PDF: {ex.Message}");
+        }
+    }
+
+    public static void OpenFile(string filePath)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = filePath,
+            UseShellExecute = true
+        };
+
+        System.Diagnostics.Process.Start(info);
+    }
 }

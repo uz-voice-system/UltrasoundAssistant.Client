@@ -80,6 +80,7 @@ public partial class CreateReportViewModel : ViewModelBase
     public ICommand StopRecordingCommand { get; }
     public ICommand SaveReportCommand { get; }
     public ICommand CompleteReportCommand { get; }
+    public ICommand GeneratePdfCommand { get; }
     public ICommand GoBackCommand { get; }
 
     public CreateReportViewModel(
@@ -106,6 +107,7 @@ public partial class CreateReportViewModel : ViewModelBase
         StopRecordingCommand = new AsyncRelayCommand(StopRecordingAsync);
         SaveReportCommand = new AsyncRelayCommand(SaveReportAsync);
         CompleteReportCommand = new AsyncRelayCommand(CompleteReportAsync);
+        GeneratePdfCommand = new AsyncRelayCommand(GeneratePdfAsync);
         GoBackCommand = main.GoBackCommand;
     }
 
@@ -605,5 +607,37 @@ public partial class CreateReportViewModel : ViewModelBase
         PatientSearchText = string.Empty;
 
         ReportFields.Clear();
+    }
+
+    private async Task GeneratePdfAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        if (_currentReportId == Guid.Empty)
+        {
+            ErrorMessage = "Сначала создайте отчёт.";
+            return;
+        }
+
+        IsBusy = true;
+
+        try
+        {
+            var result = await _reportService.DownloadPdfAsync(_currentReportId);
+
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Data))
+            {
+                ErrorMessage = result.ErrorMessage ?? "Не удалось сформировать PDF.";
+                return;
+            }
+
+            ReportApiService.OpenFile(result.Data);
+            SuccessMessage = "PDF сформирован и открыт.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }

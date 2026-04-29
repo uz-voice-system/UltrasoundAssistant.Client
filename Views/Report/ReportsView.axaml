@@ -35,6 +35,9 @@
                 <Button Content="Редактировать"
                         Command="{Binding DataContext.EditReportCommand, ElementName=Root}"
                         CommandParameter="{Binding}" />
+                <Button Content="Сформировать отчет"
+                        Command="{Binding DataContext.GeneratePdfCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
                 <Button Content="Удалить"
                         Command="{Binding DataContext.DeleteReportCommand, ElementName=Root}"
                         CommandParameter="{Binding}" />

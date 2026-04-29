@@ -138,6 +138,9 @@
       <Button Content="Завершить отчёт"
               Command="{Binding CompleteReportCommand}"
               IsEnabled="{Binding CanEditReportFields}" />
+      <Button Content="Сформировать отчёт"
+              Command="{Binding GeneratePdfCommand}"
+              IsEnabled="{Binding CanGeneratePdf}" />
     </StackPanel>
 
       <Border Grid.RowSpan="4"

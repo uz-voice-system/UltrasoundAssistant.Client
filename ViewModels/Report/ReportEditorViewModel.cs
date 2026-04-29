@@ -64,6 +64,7 @@ public partial class ReportEditorViewModel : ViewModelBase
     public bool CanStopRecording => !IsBusy && !IsCompleted && !IsRecognizing && IsRecording;
     public bool CanSave => !IsBusy && !IsCompleted && !IsRecognizing;
     public bool CanComplete => !IsBusy && !IsCompleted && !IsRecognizing;
+    public bool CanGeneratePdf => _reportId != Guid.Empty && IsCompleted && !IsBusy && !IsRecognizing;
 
     public ICommand LoadReportCommand { get; }
     public ICommand StartRecordingCommand { get; }
@@ -71,6 +72,7 @@ public partial class ReportEditorViewModel : ViewModelBase
     public ICommand StopRecordingCommand { get; }
     public ICommand SaveReportCommand { get; }
     public ICommand CompleteReportCommand { get; }
+    public ICommand GeneratePdfCommand { get; }
     public ICommand GoBackCommand { get; }
 
     public ReportEditorViewModel(
@@ -92,6 +94,7 @@ public partial class ReportEditorViewModel : ViewModelBase
         StopRecordingCommand = new AsyncRelayCommand(StopRecordingAsync);
         SaveReportCommand = new AsyncRelayCommand(SaveReportAsync);
         CompleteReportCommand = new AsyncRelayCommand(CompleteReportAsync);
+        GeneratePdfCommand = new AsyncRelayCommand(GeneratePdfAsync);
         GoBackCommand = main.GoBackCommand;
     }
 
@@ -109,6 +112,7 @@ public partial class ReportEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanStopRecording));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(CanComplete));
+        OnPropertyChanged(nameof(CanGeneratePdf));
     }
 
     public async Task LoadReportAsync(Guid reportId)
@@ -443,6 +447,44 @@ public partial class ReportEditorViewModel : ViewModelBase
             _reportVersion++;
             IsCompleted = true;
             SuccessMessage = "Отчёт завершён.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task GeneratePdfAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        if (_reportId == Guid.Empty)
+        {
+            ErrorMessage = "Отчёт не загружен.";
+            return;
+        }
+
+        if (!IsCompleted)
+        {
+            ErrorMessage = "PDF можно сформировать только для завершённого отчёта.";
+            return;
+        }
+
+        IsBusy = true;
+
+        try
+        {
+            var result = await _reportService.DownloadPdfAsync(_reportId);
+
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Data))
+            {
+                ErrorMessage = result.ErrorMessage ?? "Не удалось сформировать PDF.";
+                return;
+            }
+
+            ReportApiService.OpenFile(result.Data);
+            SuccessMessage = "PDF сформирован и открыт.";
         }
         finally
         {

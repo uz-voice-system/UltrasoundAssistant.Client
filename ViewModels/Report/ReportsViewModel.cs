@@ -62,6 +62,7 @@ public partial class ReportsViewModel : ViewModelBase
     public ICommand EditReportCommand { get; }
     public ICommand DeleteReportCommand { get; }
     public ICommand CloseDetailsCommand { get; }
+    public ICommand GeneratePdfCommand { get; }
     public ICommand GoBackCommand { get; }
 
     public ReportsViewModel(
@@ -88,6 +89,7 @@ public partial class ReportsViewModel : ViewModelBase
         PreviewReportCommand = new RelayCommand<ReportDto?>(OpenDetails);
         EditReportCommand = new RelayCommand<ReportDto?>(async r => await OpenReportAsync(r));
         DeleteReportCommand = new RelayCommand<ReportDto?>(async r => await DeleteReportAsync(r));
+        GeneratePdfCommand = new RelayCommand<ReportDto?>(async r => await GeneratePdfAsync(r));
         CloseDetailsCommand = new RelayCommandSync(_ => CloseDetails());
         GoBackCommand = main.GoBackCommand;
     }
@@ -204,5 +206,29 @@ public partial class ReportsViewModel : ViewModelBase
             await FilterReportsAsync();
         else
             ErrorMessage = result.ErrorMessage;
+    }
+
+    private async Task GeneratePdfAsync(ReportDto? report)
+    {
+        ErrorMessage = null;
+
+        if (report == null)
+            return;
+
+        if (!report.Status.ToString().Equals("Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "PDF можно сформировать только для завершённого отчёта.";
+            return;
+        }
+
+        var result = await _reportService.DownloadPdfAsync(report.Id);
+
+        if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Data))
+        {
+            ErrorMessage = result.ErrorMessage ?? "Не удалось сформировать PDF.";
+            return;
+        }
+
+        ReportApiService.OpenFile(result.Data);
     }
 }

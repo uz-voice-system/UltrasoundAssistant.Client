@@ -1,6 +1,5 @@
-using System.Net;
 using System.Net.Http.Json;
-using UltrasoundAssistant.DoctorClient.Models;
+using UltrasoundAssistant.DoctorClient.Models.Auth;
 using UltrasoundAssistant.DoctorClient.Models.Common;
 
 namespace UltrasoundAssistant.DoctorClient.Services;
@@ -9,34 +8,24 @@ public class AuthApiService : ApiServiceBase
 {
     private readonly HttpClient _httpClient;
 
-    public AuthApiService(HttpClient httpClient)
+    public AuthApiService(IHttpClientFactory factory)
     {
-        _httpClient = httpClient;
+        _httpClient = factory.CreateClient("UnauthorizedClient");
     }
 
-    public async Task<QueryResult<LoginResponse>> LoginAsync(LoginRequest request)
+    public async Task<QueryResult<LoginResult>> LoginAsync(
+        LoginRequest request,
+        CancellationToken ct = default)
     {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/login", request);
+        var response = await _httpClient.PostAsJsonAsync("api/auth/login", request, ct);
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-                return QueryResult<LoginResponse>.Failure("Неверный логин или пароль.");
+        if (!response.IsSuccessStatusCode)
+            return await ReadQueryResultAsync<LoginResult>(response, "Неверный логин или пароль.");
 
-            if (response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                var badRequestText = await response.Content.ReadAsStringAsync();
-                return QueryResult<LoginResponse>.Failure(
-                    string.IsNullOrWhiteSpace(badRequestText)
-                        ? "Некорректные данные для входа."
-                        : badRequestText);
-            }
+        var data = await response.Content.ReadFromJsonAsync<LoginResult>(cancellationToken: ct);
 
-            return await ReadQueryResultAsync<LoginResponse>(response, "Пользователь не найден.");
-        }
-        catch (Exception ex)
-        {
-            return QueryResult<LoginResponse>.Failure($"Ошибка соединения: {ex.Message}");
-        }
+        return data is null
+            ? QueryResult<LoginResult>.Failure("Сервер вернул пустой ответ.")
+            : QueryResult<LoginResult>.Success(data);
     }
 }

@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
-using UltrasoundAssistant.DoctorClient.Models.Commands.Patient;
 using UltrasoundAssistant.DoctorClient.Models.Common;
-using UltrasoundAssistant.DoctorClient.Models.Read.Patient;
+using UltrasoundAssistant.DoctorClient.Models.Commands.Patients;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Patients.Details;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Patients.Search;
 
 namespace UltrasoundAssistant.DoctorClient.Services;
 
@@ -9,57 +10,45 @@ public class PatientApiService : ApiServiceBase
 {
     private readonly HttpClient _httpClient;
 
-    public PatientApiService(HttpClient httpClient)
+    public PatientApiService(IHttpClientFactory factory)
     {
-        _httpClient = httpClient;
+        _httpClient = factory.CreateClient("AuthorizedClient");
     }
 
-    public async Task<QueryResult<List<PatientDto>>> GetAllAsync()
+    public async Task<QueryResult<PatientDto>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync("api/patients");
-        return await ReadQueryResultAsync<List<PatientDto>>(response, "Пациенты не найдены.");
-    }
-
-    public async Task<QueryResult<PatientDto>> GetByIdAsync(Guid id)
-    {
-        var response = await _httpClient.GetAsync($"api/patients/{id}");
+        var response = await _httpClient.GetAsync($"api/patients/{id}", ct);
         return await ReadQueryResultAsync<PatientDto>(response, "Пациент не найден.");
     }
 
-    public async Task<CommandResult> CreateAsync(CreatePatientCommand command)
+    public async Task<QueryResult<List<PatientSummaryDto>>> SearchAsync(
+        PatientSearchRequest filter,
+        CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/patients", command);
+        var response = await _httpClient.PostAsJsonAsync("api/patients/search", filter, ct);
+        return await ReadQueryResultAsync<List<PatientSummaryDto>>(response, "Пациенты не найдены.");
+    }
+
+    public Task<QueryResult<List<PatientSummaryDto>>> GetAllAsync(CancellationToken ct = default)
+    {
+        return SearchAsync(new PatientSearchRequest(), ct);
+    }
+
+    public async Task<CommandResult> CreateAsync(CreatePatientCommand command, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/patients", command, ct);
         return await ReadCommandResultAsync(response, "Не удалось создать пациента.");
     }
 
-    public async Task<CommandResult> UpdateAsync(UpdatePatientCommand command)
+    public async Task<CommandResult> UpdateAsync(UpdatePatientCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync("api/patients", command);
+        var response = await _httpClient.PutAsJsonAsync("api/patients", command, ct);
         return await ReadCommandResultAsync(response, "Не удалось обновить пациента.");
     }
 
-    public async Task<CommandResult> DeactivateAsync(DeactivatePatientCommand command)
+    public async Task<CommandResult> DeleteAsync(DeletePatientCommand command, CancellationToken ct = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Delete, "api/patients")
-        {
-            Content = JsonContent.Create(command)
-        };
-
-        var response = await _httpClient.SendAsync(request);
-        return await ReadCommandResultAsync(response, "Не удалось деактивировать пациента.");
-    }
-
-    public async Task<QueryResult<List<PatientDto>>> SearchByFullNameAsync(string fullName)
-    {
-        var result = await GetAllAsync();
-
-        if (!result.IsSuccess || result.Data == null)
-            return QueryResult<List<PatientDto>>.Failure(result.ErrorMessage ?? "Не удалось загрузить пациентов.");
-
-        var filtered = result.Data
-            .Where(x => !string.IsNullOrWhiteSpace(x.FullName) && x.FullName.Contains(fullName, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        return QueryResult<List<PatientDto>>.Success(filtered);
+        var response = await _httpClient.DeleteAsJsonAsync("api/patients", command, ct);
+        return await ReadCommandResultAsync(response, "Не удалось удалить пациента.");
     }
 }

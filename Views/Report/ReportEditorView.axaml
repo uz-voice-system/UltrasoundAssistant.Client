@@ -1,125 +1,291 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:reportVm="using:UltrasoundAssistant.DoctorClient.ViewModels.Report"
-             x:Class="UltrasoundAssistant.DoctorClient.Views.Report.ReportEditorView">
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Report.ReportEditorView"
+             x:DataType="reportVm:ReportEditorViewModel"
+             x:Name="Root">
 
-  <Grid Margin="10" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="3*,2*">
+  <Grid Margin="14" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="3*,2*">
 
-    <!-- Верхняя панель -->
-    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
-      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
-      <TextBlock Text="{Binding SuccessMessage}" Foreground="Green" VerticalAlignment="Center" />
-      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" VerticalAlignment="Center" />
-    </StackPanel>
+    <Border Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,0,10">
 
-    <!-- Информация об отчёте -->
-    <Border Grid.Row="1" Grid.Column="0" Background="#EEEEEE" Padding="10" Margin="0,10,10,10">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Редактирование черновика" FontSize="18" FontWeight="Bold" />
+      <DockPanel>
+        <Button Content="← Назад"
+                Command="{Binding GoBackCommand}"
+                DockPanel.Dock="Left"/>
 
-        <TextBlock Text="Пациент:" />
-        <TextBox Text="{Binding PatientName}" IsReadOnly="True" />
-
-        <TextBlock Text="Шаблон:" />
-        <TextBox Text="{Binding TemplateName}" IsReadOnly="True" />
-      </StackPanel>
+        <StackPanel Margin="12,0,0,0">
+          <TextBlock Text="Заполнение отчёта УЗИ"
+                     FontSize="20"
+                     FontWeight="Bold"/>
+          <TextBlock Text="{Binding Status, StringFormat='Статус: {0}'}"
+                     Foreground="#666"/>
+        </StackPanel>
+      </DockPanel>
     </Border>
 
-    <!-- Блок записи -->
-    <Border Grid.Row="1" Grid.Column="1" Background="#EEEEEE" Padding="10" Margin="0,10,0,10">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Голосовой ввод" FontSize="18" FontWeight="Bold" />
+    <Border Grid.Row="1"
+            Grid.Column="0"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,10,10">
 
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <Button Content="Начать запись"
-                  Command="{Binding StartRecordingCommand}"
-                  IsEnabled="{Binding CanStartRecording}" />
-          <Button Content="Пауза"
-                  Command="{Binding PauseRecordingCommand}"
-                  IsEnabled="{Binding CanPauseRecording}" />
-          <Button Content="Остановить запись"
-                  Command="{Binding StopRecordingCommand}"
-                  IsEnabled="{Binding CanStopRecording}" />
+      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Пациент"/>
+          <TextBox Text="{Binding PatientName}" IsReadOnly="True"/>
         </StackPanel>
 
-        <TextBlock Text="Распознанный текст:" FontWeight="Bold" />
-        <TextBox Text="{Binding RecognizedText}"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 Height="120" />
-      </StackPanel>
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Шаблон"/>
+          <TextBox Text="{Binding TemplateName}" IsReadOnly="True"/>
+        </StackPanel>
+
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="Время приёма"/>
+          <TextBox Text="{Binding AppointmentTimeText}" IsReadOnly="True"/>
+        </StackPanel>
+      </Grid>
     </Border>
 
-    <!-- Поля отчёта -->
-    <Border Grid.Row="2" Grid.Column="0" Background="#EEEEEE" Padding="10" Margin="0,0,10,10">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Поля отчёта" FontSize="18" FontWeight="Bold" />
+    <Border Grid.Row="1"
+            Grid.Column="1"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,0,10">
 
-        <ScrollViewer Height="420">
-          <DataGrid ItemsSource="{Binding ReportFields}"
-                    AutoGenerateColumns="False"
-                    GridLinesVisibility="All"
-                    BorderBrush="Gray"
-                    BorderThickness="1">
-            <DataGrid.Columns>
-              <DataGridTextColumn Header="Ключевое слово"
-                    x:DataType="reportVm:ReportFieldEditorItem"
-                    Binding="{Binding Keyword}"
-                    Width="220"
-                    IsReadOnly="True" />
-              <DataGridTextColumn Header="Значение"
-                    x:DataType="reportVm:ReportFieldEditorItem"
-                    Binding="{Binding Value}"
-                    Width="*" />
-            </DataGrid.Columns>
-          </DataGrid>
-        </ScrollViewer>
-      </StackPanel>
-    </Border>
-
-    <!-- Неуверенно распознано -->
-    <Border Grid.Row="2" Grid.Column="1" Background="#EEEEEE" Padding="10" Margin="0,0,0,10">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Неуверенно распознано / требует проверки"
+      <StackPanel Spacing="8">
+        <TextBlock Text="Голосовой ввод"
                    FontSize="18"
-                   FontWeight="Bold" />
+                   FontWeight="Bold"/>
 
-        <TextBlock Text="Сюда попадает то, что система не смогла уверенно сопоставить с полем шаблона."
-                   TextWrapping="Wrap" />
+        <TextBlock Text="Во время записи врач может произнести «пауза» или «продолжить», если нужно временно остановить или возобновить диктовку."
+                   TextWrapping="Wrap"
+                   Foreground="#666"/>
 
-        <TextBox Text="{Binding UnmatchedRecognitions}"
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Начать запись"
+                  Command="{Binding StartRecordingCommand}"
+                  IsEnabled="{Binding CanStartRecording}"/>
+
+          <Button Content="Закончить запись"
+                  Command="{Binding StopRecordingCommand}"
+                  IsEnabled="{Binding CanStopRecording}"/>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="2"
+            Grid.Column="0"
+            Background="#FFFFFF"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="10"
+            Margin="0,0,10,10">
+
+      <Grid RowDefinitions="Auto,*" RowSpacing="10">
+        <TextBlock Grid.Row="0"
+                   Text="Поля отчёта"
+                   FontSize="18"
+                   FontWeight="Bold"/>
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto">
+
+          <ItemsControl ItemsSource="{Binding ReportBlocks}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="reportVm:ReportBlockEditorItem">
+
+                <Border Background="#F7F8FA"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12"
+                        Margin="0,0,0,12">
+
+                  <StackPanel Spacing="10">
+
+                    <StackPanel>
+                      <TextBlock Text="{Binding BlockName}"
+                                 FontSize="17"
+                                 FontWeight="Bold"/>
+
+                      <TextBlock Text="{Binding BlockPhrasesText, StringFormat='Фразы блока: {0}'}"
+                                 Foreground="#666"
+                                 TextWrapping="Wrap"
+                                 Margin="0,3,0,0"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="1.3*,2*,1.4*,1.2*"
+                          ColumnSpacing="8"
+                          Margin="18,0,0,0">
+
+                      <TextBlock Grid.Column="0"
+                                 Text="Поле"
+                                 FontWeight="Bold"
+                                 Foreground="#555"/>
+
+                      <TextBlock Grid.Column="1"
+                                 Text="Фразы"
+                                 FontWeight="Bold"
+                                 Foreground="#555"/>
+
+                      <TextBlock Grid.Column="2"
+                                 Text="Значение"
+                                 FontWeight="Bold"
+                                 Foreground="#555"/>
+
+                      <TextBlock Grid.Column="3"
+                                 Text="Норма"
+                                 FontWeight="Bold"
+                                 Foreground="#555"/>
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Fields}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="reportVm:ReportFieldEditorItem">
+
+                          <Grid ColumnDefinitions="1.3*,2*,1.4*,1.2*"
+                                ColumnSpacing="8"
+                                Margin="18,0,0,6">
+
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding DisplayName}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding PhrasesText}"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBox Grid.Column="2"
+                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap"
+                                     MinWidth="170"
+                                     IsReadOnly="{Binding #Root.DataContext.IsCompletedOrArchived}"/>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding NormMessage}"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"/>
+
+                          </Grid>
+
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                  </StackPanel>
+                </Border>
+
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="2"
+            Grid.Column="1"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,0,10">
+
+      <Grid RowDefinitions="Auto,*,Auto,*" RowSpacing="8">
+        <TextBlock Grid.Row="0"
+                   Text="Результат распознавания"
+                   FontSize="18"
+                   FontWeight="Bold"/>
+
+        <TextBox Grid.Row="1"
+                 Text="{Binding RecognizedText}"
+                 AcceptsReturn="True"
+                 IsReadOnly="True"
+                 TextWrapping="Wrap"
+                 MinHeight="160"/>
+
+        <TextBlock Grid.Row="2"
+                   Text="Не сопоставлено / требует проверки"
+                   FontWeight="Bold"/>
+
+        <TextBox Grid.Row="3"
+                 Text="{Binding UnmatchedRecognitions}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  VerticalContentAlignment="Top"
-                 Height="420" />
-      </StackPanel>
+                 MinHeight="200"/>
+      </Grid>
     </Border>
 
-    <!-- Нижняя панель -->
-    <StackPanel Grid.Row="3" Grid.ColumnSpan="2"
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                Spacing="10">
-        <Button Content="Сохранить"
-                Command="{Binding SaveReportCommand}"
-                IsEnabled="{Binding CanSave}" />
-        <Button Content="Завершить отчёт"
-                Command="{Binding CompleteReportCommand}"
-                IsEnabled="{Binding CanComplete}" />
-        <Button Content="Сформировать отчёт"
-                Command="{Binding GeneratePdfCommand}"
-                IsEnabled="{Binding CanGeneratePdf}" />
-    </StackPanel>
+    <Border Grid.Row="3"
+            Grid.ColumnSpan="2"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12">
 
-      <Border Grid.RowSpan="4"
-        Grid.ColumnSpan="2"
-        Background="#80000000"
-        IsVisible="{Binding IsRecognizing}"
-        ZIndex="1000">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Left">
+          <TextBlock Text="{Binding SuccessMessage}"
+                     Foreground="Green"/>
+          <TextBlock Text="{Binding ErrorMessage}"
+                     Foreground="Red"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Right"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+
+          <Button Content="Сохранить отчёт"
+                  Command="{Binding SaveReportCommand}"
+                  IsEnabled="{Binding CanSave}"
+                  Padding="14,7"/>
+
+          <Button Content="Завершить отчёт"
+                  Command="{Binding CompleteReportCommand}"
+                  IsEnabled="{Binding CanComplete}"
+                  Padding="14,7"/>
+
+          <Button Content="Распечатать отчёт"
+                  Command="{Binding GeneratePdfCommand}"
+                  IsEnabled="{Binding CanGeneratePdf}"
+                  Padding="14,7"/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Border Grid.RowSpan="4"
+            Grid.ColumnSpan="2"
+            Background="#80000000"
+            IsVisible="{Binding IsRecognizing}"
+            ZIndex="1000">
+
       <Grid>
-        <Border Width="320"
-                Padding="20"
+        <Border Width="340"
+                Padding="22"
                 CornerRadius="12"
                 Background="White"
                 HorizontalAlignment="Center"
@@ -128,18 +294,19 @@
             <TextBlock Text="Идёт распознавание..."
                        FontSize="20"
                        FontWeight="Bold"
-                       HorizontalAlignment="Center" />
+                       HorizontalAlignment="Center"/>
 
             <TextBlock Text="Пожалуйста, дождитесь окончания обработки аудио."
                        TextWrapping="Wrap"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center" />
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"/>
 
             <ProgressBar IsIndeterminate="True"
-                         Height="16" />
+                         Height="16"/>
           </StackPanel>
         </Border>
       </Grid>
     </Border>
+
   </Grid>
 </UserControl>

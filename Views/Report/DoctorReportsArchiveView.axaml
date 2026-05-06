@@ -1,0 +1,195 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrasoundAssistant.DoctorClient.ViewModels.Report"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.Report.DoctorReportsArchiveView"
+             x:DataType="vm:DoctorReportsArchiveViewModel"
+             x:Name="Root"
+             AttachedToVisualTree="UserControl_OnAttachedToVisualTree">
+
+  <Grid Margin="14" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+
+    <Border Grid.Row="0"
+            Grid.Column="0"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,10,10">
+
+      <StackPanel Spacing="10">
+
+        <DockPanel>
+          <Button Content="← Назад"
+                  Command="{Binding GoBackCommand}"
+                  DockPanel.Dock="Left"/>
+
+          <TextBlock Text="Архив отчётов"
+                     FontSize="20"
+                     FontWeight="Bold"
+                     Margin="12,0,0,0"
+                     VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBox Width="280"
+                   Watermark="Пациент, врач или шаблон"
+                   Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+          <DatePicker SelectedDate="{Binding CreatedFromDate}" />
+          <DatePicker SelectedDate="{Binding CreatedToDate}" />
+
+          <ComboBox Width="150"
+                    ItemsSource="{Binding Statuses}"
+                    SelectedItem="{Binding SelectedStatus}" />
+
+          <Button Content="Найти"
+                  Command="{Binding FilterReportsCommand}" />
+
+          <Button Content="Сбросить"
+                  Command="{Binding ClearFiltersCommand}" />
+        </StackPanel>
+
+        <Expander Header="Дополнительные параметры"
+                  IsExpanded="{Binding AreAdditionalFiltersVisible}">
+          <Grid ColumnDefinitions="260,220,*"
+                ColumnSpacing="10"
+                Margin="0,10,0,0">
+
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Шаблон"/>
+              <ComboBox ItemsSource="{Binding Templates}"
+                        SelectedItem="{Binding SelectedTemplate}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Name}"/>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <CheckBox Grid.Column="1"
+                      Content="Показывать удалённые"
+                      IsChecked="{Binding IncludeDeleted}"
+                      VerticalAlignment="Bottom"/>
+          </Grid>
+        </Expander>
+
+      </StackPanel>
+    </Border>
+
+    <DataGrid Grid.Row="1"
+              Grid.Column="0"
+              ItemsSource="{Binding Reports}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              GridLinesVisibility="Horizontal"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              Margin="0,0,10,0">
+
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="Дата приёма"
+                            Binding="{Binding AppointmentStartAtUtc, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}"
+                            Width="160" />
+
+        <DataGridTextColumn Header="Пациент"
+                            Binding="{Binding PatientFullName}"
+                            Width="2*" />
+
+        <DataGridTextColumn Header="Шаблон"
+                            Binding="{Binding TemplateName}"
+                            Width="2*" />
+
+        <DataGridTextColumn Header="Статус"
+                            Binding="{Binding Status}"
+                            Width="130" />
+
+        <DataGridTemplateColumn Header="Действия" Width="330">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Content="Просмотр"
+                        Command="{Binding DataContext.PreviewReportCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+
+                <Button Content="Редактировать"
+                        Command="{Binding DataContext.EditReportCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+
+                <Button Content="Печать"
+                        Command="{Binding DataContext.GeneratePdfCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+              </StackPanel>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+      </DataGrid.Columns>
+    </DataGrid>
+
+    <StackPanel Grid.Row="2"
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="12"
+                Margin="0,10,10,0">
+
+      <TextBlock Text="{Binding SuccessMessage}"
+                 Foreground="Green"
+                 VerticalAlignment="Center"/>
+
+      <TextBlock Text="{Binding ErrorMessage}"
+                 Foreground="Red"
+                 VerticalAlignment="Center"/>
+    </StackPanel>
+
+    <Border Grid.Row="0"
+            Grid.RowSpan="3"
+            Grid.Column="1"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="14"
+            IsVisible="{Binding IsDetailsPanelVisible}">
+
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <TextBlock Text="Предпросмотр отчёта"
+                     FontWeight="Bold"
+                     FontSize="18"/>
+
+          <TextBlock Text="Пациент"/>
+          <TextBox Text="{Binding SelectedReport.PatientFullName}"
+                   IsReadOnly="True"/>
+
+          <TextBlock Text="Врач"/>
+          <TextBox Text="{Binding SelectedReport.DoctorFullName}"
+                   IsReadOnly="True"/>
+
+          <TextBlock Text="Шаблон"/>
+          <TextBox Text="{Binding SelectedReport.TemplateName}"
+                   IsReadOnly="True"/>
+
+          <TextBlock Text="Статус"/>
+          <TextBox Text="{Binding SelectedReport.Status}"
+                   IsReadOnly="True"/>
+
+          <TextBlock Text="Содержимое"
+                     FontWeight="Bold"
+                     Margin="0,10,0,0"/>
+
+          <TextBox Text="{Binding SelectedReportContentText}"
+                   AcceptsReturn="True"
+                   IsReadOnly="True"
+                   TextWrapping="Wrap"
+                   MinHeight="300"/>
+
+          <Button Content="Закрыть"
+                  HorizontalAlignment="Right"
+                  Command="{Binding CloseDetailsCommand}"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+  </Grid>
+</UserControl>

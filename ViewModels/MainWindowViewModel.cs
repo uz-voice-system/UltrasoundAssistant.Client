@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using UltrasoundAssistant.DoctorClient.Helpers;
-using UltrasoundAssistant.DoctorClient.Models;
-using UltrasoundAssistant.DoctorClient.Models.Enum;
+using UltrasoundAssistant.DoctorClient.Models.Auth;
+using UltrasoundAssistant.DoctorClient.Models.Enums;
 using UltrasoundAssistant.DoctorClient.Services;
 using UltrasoundAssistant.DoctorClient.Services.AudioService;
 using UltrasoundAssistant.DoctorClient.ViewModels.MainMenu;
@@ -11,7 +11,8 @@ namespace UltrasoundAssistant.DoctorClient.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private object _currentView = new();
-    private LoginResponse? _currentUser = null;
+    private LoginResult? _currentUser = null;
+    private ITokenProvider _tokenProvider { get; }
 
     public object CurrentView
     {
@@ -23,7 +24,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public LoginResponse CurrentUser
+    public LoginResult CurrentUser
     {
         get => _currentUser!;
         set => _currentUser = value;
@@ -41,12 +42,17 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         AuthApiService authService,
         PatientApiService patientApiService,
+        UserApiService userApiService,
         TemplateApiService templateApiService,
+        AppointmentApiService appointmentApiService,
+        ScheduleApiService scheduleApiService,
         ReportApiService reportApiService,
         VoiceApiService voiceApiService,
-        IAudioRecorderService audioRecorderService)
+        IAudioRecorderService audioRecorderService,
+        ITokenProvider tokenProvider)
     {
-        _loginViewModel = new LoginViewModel(this, authService);
+        _tokenProvider = tokenProvider;
+        _loginViewModel = new LoginViewModel(this, authService, _tokenProvider);
 
         GoBackCommand = new RelayCommand(async parameter => await GoBack());
         LogoutCommand = new RelayCommand(async parameter => await Logout());
@@ -58,8 +64,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _doctorDashboardViewModel = new DoctorDashboardViewModel(
             this,
+            appointmentApiService,
             reportApiService,
-            patientApiService,
             templateApiService,
             voiceApiService,
             audioRecorderService
@@ -67,7 +73,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _registrarDashboardViewModel = new RegistrarDashboardViewModel(
             this,
-            patientApiService
+            patientApiService,
+            userApiService,
+            templateApiService,
+            appointmentApiService,
+            reportApiService
         );
 
         CurrentView = _loginViewModel;
@@ -107,6 +117,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async Task Logout()
     {
+        _currentUser = null;
+        _tokenProvider.ClearToken();
+
         UpdateCurrentView(_loginViewModel);
         await Task.CompletedTask;
     }

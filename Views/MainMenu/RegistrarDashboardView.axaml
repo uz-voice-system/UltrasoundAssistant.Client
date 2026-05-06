@@ -4,33 +4,88 @@
              x:Class="UltrasoundAssistant.DoctorClient.Views.MainMenu.RegistrarDashboardView"
              x:DataType="vm:RegistrarDashboardViewModel">
 
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-    </Grid.RowDefinitions>
+  <Grid RowDefinitions="Auto,*">
 
-    <DockPanel Margin="10" Grid.Row="0">
-      <TextBlock Text="Панель регистратора"
-                 FontSize="20"
-                 FontWeight="Bold"
-                 VerticalAlignment="Center"
-                 DockPanel.Dock="Left"/>
+    <Border Grid.Row="0"
+            Background="#F7F8FA"
+            Padding="16"
+            BorderBrush="#DDDDDD"
+            BorderThickness="0,0,0,1">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Left">
+          <TextBlock Text="Панель регистратора"
+                     FontSize="22"
+                     FontWeight="Bold"/>
+          <TextBlock Text="Работа с пациентами и записью на приём"
+                     Foreground="#666"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
 
-      <Button Content="⎋ Выйти"
-              Command="{Binding LogoutCommand}"
-              HorizontalAlignment="Right"
-              Background="#e74c3c"
-              Foreground="White"
-              Padding="10,5"
-              FontWeight="Bold"
-              BorderThickness="0"
-              CornerRadius="5"
-              DockPanel.Dock="Right"/>
-    </DockPanel>
+        <Button Content="⎋ Выйти"
+                Command="{Binding LogoutCommand}"
+                HorizontalAlignment="Right"
+                Background="#E74C3C"
+                Foreground="White"
+                Padding="14,7"
+                FontWeight="Bold"
+                BorderThickness="0"
+                CornerRadius="6"
+                DockPanel.Dock="Right"/>
+      </DockPanel>
+    </Border>
 
-    <StackPanel Grid.Row="1" Margin="20" Spacing="10">
-      <Button Content="Список пациентов" Command="{Binding OpenPatientsCommand}" />
-    </StackPanel>
+    <Grid Grid.Row="1" Margin="24">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <Border Grid.Column="0"
+              Background="#FFFFFF"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="24"
+              Margin="0,0,12,0">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Список пациентов"
+                     FontSize="20"
+                     FontWeight="Bold"/>
+
+          <TextBlock Text="Поиск, добавление, редактирование и удаление карточек пациентов."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
+
+          <Button Content="Открыть список пациентов"
+                  Command="{Binding OpenPatientsCommand}"
+                  HorizontalAlignment="Left"
+                  Padding="16,8"/>
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Column="1"
+              Background="#FFFFFF"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="24"
+              Margin="12,0,0,0">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Записать пациента на приём"
+                     FontSize="20"
+                     FontWeight="Bold"/>
+
+          <TextBlock Text="Выбор пациента, врача, шаблона исследования и времени приёма."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
+
+          <Button Content="Создать запись на приём"
+                  Command="{Binding OpenAppointmentRegistrationCommand}"
+                  HorizontalAlignment="Left"
+                  Padding="16,8"/>
+        </StackPanel>
+      </Border>
+    </Grid>
+
   </Grid>
 </UserControl>

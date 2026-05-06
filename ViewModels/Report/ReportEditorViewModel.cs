@@ -1,10 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Net.NetworkInformation;
+using System.Text.Json;
 using System.Windows.Input;
-using UltrasoundAssistant.DoctorClient.Models.Commands.Report;
-using UltrasoundAssistant.DoctorClient.Models.Read.Report;
-using UltrasoundAssistant.DoctorClient.Models.Read.Template;
+using UltrasoundAssistant.DoctorClient.Models.Commands.Reports;
+using UltrasoundAssistant.DoctorClient.Models.Enums;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Reports.Details;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Templates.Details;
 using UltrasoundAssistant.DoctorClient.Models.Voice;
 using UltrasoundAssistant.DoctorClient.Services;
 using UltrasoundAssistant.DoctorClient.Services.AudioService;
@@ -20,16 +24,27 @@ public partial class ReportEditorViewModel : ViewModelBase
     private readonly IAudioRecorderService _audioRecorderService;
 
     private Guid _reportId;
-    private int _reportVersion;
     private Guid _templateId;
+    private int _reportVersion;
 
     public ObservableCollection<ReportFieldEditorItem> ReportFields { get; } = new();
+
+    public ObservableCollection<ReportBlockEditorItem> ReportBlocks { get; } = new();
 
     [ObservableProperty]
     private string patientName = string.Empty;
 
     [ObservableProperty]
+    private string doctorName = string.Empty;
+
+    [ObservableProperty]
     private string templateName = string.Empty;
+
+    [ObservableProperty]
+    private string appointmentTimeText = string.Empty;
+
+    [ObservableProperty]
+    private ReportStatus status = ReportStatus.Draft;
 
     [ObservableProperty]
     private bool isBusy;
@@ -38,10 +53,7 @@ public partial class ReportEditorViewModel : ViewModelBase
     private bool isRecording;
 
     [ObservableProperty]
-    private bool isPaused;
-
-    [ObservableProperty]
-    private bool isCompleted;
+    private bool isRecognizing;
 
     [ObservableProperty]
     private string recognizedText = string.Empty;
@@ -55,20 +67,16 @@ public partial class ReportEditorViewModel : ViewModelBase
     [ObservableProperty]
     private string? successMessage;
 
-    [ObservableProperty]
-    private bool isRecognizing;
+    public bool IsCompletedOrArchived => Status is ReportStatus.Completed or ReportStatus.Archived;
 
-    public bool CanEditReportFields => !IsBusy && !IsCompleted && !IsRecognizing;
-    public bool CanStartRecording => !IsBusy && !IsCompleted && !IsRecognizing && (!IsRecording || IsPaused);
-    public bool CanPauseRecording => !IsBusy && !IsCompleted && !IsRecognizing && IsRecording && !IsPaused;
-    public bool CanStopRecording => !IsBusy && !IsCompleted && !IsRecognizing && IsRecording;
-    public bool CanSave => !IsBusy && !IsCompleted && !IsRecognizing;
-    public bool CanComplete => !IsBusy && !IsCompleted && !IsRecognizing;
-    public bool CanGeneratePdf => _reportId != Guid.Empty && IsCompleted && !IsBusy && !IsRecognizing;
+    public bool CanEditReportFields => !IsBusy && !IsRecognizing && !IsCompletedOrArchived;
+    public bool CanStartRecording => !IsBusy && !IsRecognizing && !IsRecording && !IsCompletedOrArchived;
+    public bool CanStopRecording => !IsBusy && !IsRecognizing && IsRecording && !IsCompletedOrArchived;
+    public bool CanSave => !IsBusy && !IsRecognizing && !IsCompletedOrArchived;
+    public bool CanComplete => !IsBusy && !IsRecognizing && !IsCompletedOrArchived;
+    public bool CanGeneratePdf => _reportId != Guid.Empty && IsCompletedOrArchived && !IsBusy && !IsRecognizing;
 
-    public ICommand LoadReportCommand { get; }
     public ICommand StartRecordingCommand { get; }
-    public ICommand PauseRecordingCommand { get; }
     public ICommand StopRecordingCommand { get; }
     public ICommand SaveReportCommand { get; }
     public ICommand CompleteReportCommand { get; }
@@ -88,9 +96,7 @@ public partial class ReportEditorViewModel : ViewModelBase
         _voiceApiService = voiceApiService;
         _audioRecorderService = audioRecorderService;
 
-        LoadReportCommand = new AsyncRelayCommand<Guid>(LoadReportAsync);
         StartRecordingCommand = new AsyncRelayCommand(StartRecordingAsync);
-        PauseRecordingCommand = new AsyncRelayCommand(PauseRecordingAsync);
         StopRecordingCommand = new AsyncRelayCommand(StopRecordingAsync);
         SaveReportCommand = new AsyncRelayCommand(SaveReportAsync);
         CompleteReportCommand = new AsyncRelayCommand(CompleteReportAsync);
@@ -100,15 +106,14 @@ public partial class ReportEditorViewModel : ViewModelBase
 
     partial void OnIsBusyChanged(bool value) => RaiseStateProperties();
     partial void OnIsRecordingChanged(bool value) => RaiseStateProperties();
-    partial void OnIsPausedChanged(bool value) => RaiseStateProperties();
-    partial void OnIsCompletedChanged(bool value) => RaiseStateProperties();
     partial void OnIsRecognizingChanged(bool value) => RaiseStateProperties();
+    partial void OnStatusChanged(ReportStatus value) => RaiseStateProperties();
 
     private void RaiseStateProperties()
     {
+        OnPropertyChanged(nameof(IsCompletedOrArchived));
         OnPropertyChanged(nameof(CanEditReportFields));
         OnPropertyChanged(nameof(CanStartRecording));
-        OnPropertyChanged(nameof(CanPauseRecording));
         OnPropertyChanged(nameof(CanStopRecording));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(CanComplete));
@@ -124,6 +129,7 @@ public partial class ReportEditorViewModel : ViewModelBase
         try
         {
             var reportResult = await _reportService.GetByIdAsync(reportId);
+
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
                 ErrorMessage = reportResult.ErrorMessage ?? "Не удалось загрузить отчёт.";
@@ -133,17 +139,23 @@ public partial class ReportEditorViewModel : ViewModelBase
             var report = reportResult.Data;
 
             _reportId = report.Id;
-            _reportVersion = report.Version;
             _templateId = report.TemplateId;
+            _reportVersion = report.Version;
 
-            PatientName = report.PatientName ?? string.Empty;
-            TemplateName = report.TemplateName ?? string.Empty;
-            IsCompleted = report.Status.ToString().Equals("Completed", StringComparison.OrdinalIgnoreCase);
+            PatientName = report.PatientFullName;
+            DoctorName = report.DoctorFullName;
+            TemplateName = report.TemplateName;
+            Status = report.Status;
+
+            AppointmentTimeText = report.AppointmentStartAtUtc == null
+                ? string.Empty
+                : $"{report.AppointmentStartAtUtc:dd.MM.yyyy HH:mm}";
 
             var templateResult = await _templateService.GetByIdAsync(report.TemplateId);
+
             if (!templateResult.IsSuccess || templateResult.Data == null)
             {
-                ErrorMessage = templateResult.ErrorMessage ?? "Не удалось загрузить шаблон отчёта.";
+                ErrorMessage = templateResult.ErrorMessage ?? "Не удалось загрузить шаблон.";
                 return;
             }
 
@@ -160,41 +172,101 @@ public partial class ReportEditorViewModel : ViewModelBase
     private void BuildFields(TemplateDto template, ReportDto report)
     {
         ReportFields.Clear();
+        ReportBlocks.Clear();
 
-        var grouped = template.Keywords
-            .Where(k => !string.IsNullOrWhiteSpace(k.TargetField))
-            .GroupBy(k => k.TargetField.Trim(), StringComparer.OrdinalIgnoreCase)
-            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+        var values = ParseContentJson(report.ContentJson);
+        var usedFieldNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var block in template.Blocks.OrderBy(x => x.Position))
+        {
+            var blockItem = new ReportBlockEditorItem
+            {
+                BlockName = block.Name,
+                BlockPhrasesText = block.Phrases.Count == 0
+                    ? "Фразы блока не заданы"
+                    : string.Join(", ", block.Phrases)
+            };
+
+            foreach (var field in block.Fields.OrderBy(x => x.Position))
+            {
+                values.TryGetValue(field.FieldName, out var value);
+
+                var fieldItem = new ReportFieldEditorItem
+                {
+                    BlockName = block.Name,
+                    FieldName = field.FieldName,
+                    DisplayName = field.DisplayName,
+                    PhrasesText = field.Phrases.Count == 0
+                        ? field.DisplayName
+                        : string.Join(", ", field.Phrases),
+                    Value = value ?? string.Empty,
+                    OriginalValue = value ?? string.Empty,
+                    NormMessage = BuildNormText(field.Norm)
+                };
+
+                blockItem.Fields.Add(fieldItem);
+                ReportFields.Add(fieldItem);
+
+                usedFieldNames.Add(field.FieldName);
+            }
+
+            ReportBlocks.Add(blockItem);
+        }
+
+        var extraValues = values
+            .Where(x => !usedFieldNames.Contains(x.Key))
+            .OrderBy(x => x.Key)
             .ToList();
 
-        foreach (var group in grouped)
+        if (extraValues.Count > 0)
         {
-            var fieldName = group.Key;
-            var keyword = group.FirstOrDefault()?.Phrase?.Trim() ?? fieldName;
-
-            report.Content.TryGetValue(fieldName, out var value);
-
-            ReportFields.Add(new ReportFieldEditorItem
+            var extraBlock = new ReportBlockEditorItem
             {
-                FieldName = fieldName,
-                Keyword = keyword,
-                Value = value ?? string.Empty,
-                OriginalValue = value ?? string.Empty
-            });
-        }
+                BlockName = "Дополнительно",
+                BlockPhrasesText = "Поля, которых нет в текущем шаблоне"
+            };
 
-        foreach (var extraField in report.Content.Keys
-                     .Where(k => grouped.All(g => !string.Equals(g.Key, k, StringComparison.OrdinalIgnoreCase)))
-                     .OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
-        {
-            ReportFields.Add(new ReportFieldEditorItem
+            foreach (var extra in extraValues)
             {
-                FieldName = extraField,
-                Keyword = extraField,
-                Value = report.Content[extraField],
-                OriginalValue = report.Content[extraField]
-            });
+                var fieldItem = new ReportFieldEditorItem
+                {
+                    BlockName = "Дополнительно",
+                    FieldName = extra.Key,
+                    DisplayName = extra.Key,
+                    PhrasesText = extra.Key,
+                    Value = extra.Value,
+                    OriginalValue = extra.Value
+                };
+
+                extraBlock.Fields.Add(fieldItem);
+                ReportFields.Add(fieldItem);
+            }
+
+            ReportBlocks.Add(extraBlock);
         }
+    }
+
+    private static string? BuildNormText(Models.Entity.Templates.FieldNormDto? norm)
+    {
+        if (norm == null)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(norm.NormalText))
+            return $"Норма: {norm.NormalText}";
+
+        if (norm.Min == null && norm.Max == null)
+            return string.IsNullOrWhiteSpace(norm.Unit) ? null : $"Ед. изм.: {norm.Unit}";
+
+        var min = norm.Min.HasValue ? FormatDecimal(norm.Min.Value) : "—";
+        var max = norm.Max.HasValue ? FormatDecimal(norm.Max.Value) : "—";
+        var unit = string.IsNullOrWhiteSpace(norm.Unit) ? string.Empty : $" {norm.Unit}";
+
+        return $"Норма: {min}–{max}{unit}";
+    }
+
+    private static string FormatDecimal(decimal value)
+    {
+        return value.ToString("0.##", CultureInfo.CurrentCulture);
     }
 
     private async Task StartRecordingAsync()
@@ -208,49 +280,20 @@ public partial class ReportEditorViewModel : ViewModelBase
             return;
         }
 
-        IsBusy = true;
-
-        try
+        if (IsCompletedOrArchived)
         {
-            if (IsRecording && IsPaused)
-            {
-                await _audioRecorderService.ResumeAsync();
-                IsPaused = false;
-                SuccessMessage = "Запись продолжена.";
-            }
-            else
-            {
-                await _audioRecorderService.StartAsync();
-                IsRecording = true;
-                IsPaused = false;
-                SuccessMessage = "Запись начата.";
-            }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task PauseRecordingAsync()
-    {
-        ErrorMessage = null;
-        SuccessMessage = null;
-
-        if (!IsRecording || IsPaused)
+            ErrorMessage = "Завершённый или архивированный отчёт нельзя редактировать.";
             return;
+        }
 
         IsBusy = true;
 
         try
         {
-            await _audioRecorderService.PauseAsync();
-            IsPaused = true;
-            SuccessMessage = "Запись приостановлена.";
+            await _audioRecorderService.StartAsync();
+
+            IsRecording = true;
+            SuccessMessage = "Запись начата.";
         }
         catch (Exception ex)
         {
@@ -278,9 +321,7 @@ public partial class ReportEditorViewModel : ViewModelBase
         try
         {
             var wavBytes = await _audioRecorderService.StopAsync();
-
             IsRecording = false;
-            IsPaused = false;
 
             if (wavBytes == null || wavBytes.Length == 0)
             {
@@ -290,35 +331,41 @@ public partial class ReportEditorViewModel : ViewModelBase
 
             IsRecognizing = true;
 
-            var voiceRequest = new VoiceProcessRequest
+            var request = new VoiceProcessRequest
             {
                 ReportId = _reportId,
                 TemplateId = _templateId,
                 AudioBase64 = Convert.ToBase64String(wavBytes),
                 Language = "ru",
-                FileName = $"report_{_reportId}.wav"
+                FileName = $"report_{_reportId:N}.wav"
             };
 
-            var voiceResult = await _voiceApiService.ProcessAsync(voiceRequest);
+            var result = await _voiceApiService.ProcessAsync(request);
 
-            if (!voiceResult.IsSuccess || voiceResult.Data == null)
+            if (!result.IsSuccess || result.Data == null)
             {
-                ErrorMessage = voiceResult.ErrorMessage ?? "Не удалось обработать голосовой ввод.";
+                ErrorMessage = result.ErrorMessage ?? "Не удалось обработать голосовой ввод.";
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(result.Data.Error))
+            {
+                ErrorMessage = result.Data.Error;
+                return;
+            }
+
+            ApplyVoiceResult(result.Data);
+
             RecognizedText = string.Join(
                 Environment.NewLine,
-                voiceResult.Data.Fields.Select(f => $"{f.Keyword}: {f.Value}"));
+                result.Data.Fields.Select(x => $"{x.BlockName} / {x.Keyword}: {x.Value}"));
 
-            ApplyVoiceResult(voiceResult.Data);
-            SuccessMessage = "Распознавание обработано.";
+            SuccessMessage = "Распознавание завершено.";
         }
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
             IsRecording = false;
-            IsPaused = false;
         }
         finally
         {
@@ -331,85 +378,46 @@ public partial class ReportEditorViewModel : ViewModelBase
     {
         foreach (var matched in result.Fields)
         {
-            var field = ReportFields.FirstOrDefault(f =>
-                string.Equals(f.FieldName, matched.FieldName, StringComparison.OrdinalIgnoreCase));
+            var field = ReportFields.FirstOrDefault(x =>
+                string.Equals(x.FieldName, matched.FieldName, StringComparison.OrdinalIgnoreCase));
 
-            if (field != null)
+            if (field == null)
             {
-                field.Value = matched.Value ?? string.Empty;
+                AppendUnmatched($"[{matched.BlockName} / {matched.Keyword}] {matched.Value}");
+                continue;
             }
-            else
-            {
-                AppendToUnmatched($"[{matched.Keyword}] {matched.Value}");
-            }
+
+            field.Value = matched.Value ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(matched.NormMessage))
+                field.NormMessage = matched.NormMessage;
         }
 
         foreach (var unmatched in result.UnmatchedParts)
-        {
-            if (!string.IsNullOrWhiteSpace(unmatched))
-                AppendToUnmatched(unmatched);
-        }
+            AppendUnmatched(unmatched);
     }
 
-    private void AppendToUnmatched(string text)
+    private void AppendUnmatched(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        if (string.IsNullOrWhiteSpace(UnmatchedRecognitions))
-            UnmatchedRecognitions = text;
-        else
-            UnmatchedRecognitions = $"{UnmatchedRecognitions}{Environment.NewLine}{text}";
+        UnmatchedRecognitions = string.IsNullOrWhiteSpace(UnmatchedRecognitions)
+            ? text.Trim()
+            : $"{UnmatchedRecognitions}{Environment.NewLine}{text.Trim()}";
     }
 
     private async Task SaveReportAsync()
     {
-        ErrorMessage = null;
-        SuccessMessage = null;
-
-        if (_reportId == Guid.Empty)
-        {
-            ErrorMessage = "Отчёт не загружен.";
-            return;
-        }
-
-        IsBusy = true;
-
-        try
-        {
-            foreach (var field in ReportFields.Where(f => f.IsDirty && !string.IsNullOrWhiteSpace(f.FieldName)))
-            {
-                var command = new UpdateReportFieldCommand
-                {
-                    CommandId = Guid.NewGuid(),
-                    ReportId = _reportId,
-                    ExpectedVersion = _reportVersion,
-                    FieldName = field.FieldName.Trim(),
-                    Value = field.Value?.Trim() ?? string.Empty,
-                    Confidence = 1.0
-                };
-
-                var result = await _reportService.UpdateFieldAsync(command);
-
-                if (!result.IsSuccess)
-                {
-                    ErrorMessage = result.ErrorMessage ?? $"Не удалось сохранить поле {field.Keyword}.";
-                    return;
-                }
-
-                _reportVersion++;
-                field.OriginalValue = field.Value ?? string.Empty;
-            }
-
-            SuccessMessage = "Отчёт сохранён.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await SaveReportWithStatusAsync(ReportStatus.InProgress, "Отчёт сохранён. Статус: в процессе.");
     }
 
     private async Task CompleteReportAsync()
+    {
+        await SaveReportWithStatusAsync(ReportStatus.Completed, "Отчёт завершён.");
+    }
+
+    private async Task SaveReportWithStatusAsync(ReportStatus newStatus, string successMessage)
     {
         ErrorMessage = null;
         SuccessMessage = null;
@@ -420,23 +428,25 @@ public partial class ReportEditorViewModel : ViewModelBase
             return;
         }
 
-        await SaveReportAsync();
-
-        if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        if (IsCompletedOrArchived)
+        {
+            ErrorMessage = "Завершённый или архивированный отчёт нельзя редактировать.";
             return;
+        }
 
         IsBusy = true;
 
         try
         {
-            var command = new CompleteReportCommand
+            var command = new UpdateReportCommand
             {
-                CommandId = Guid.NewGuid(),
                 ReportId = _reportId,
+                Status = newStatus,
+                ContentJson = BuildContentJson(),
                 ExpectedVersion = _reportVersion
             };
 
-            var result = await _reportService.CompleteAsync(command);
+            var result = await _reportService.UpdateAsync(command);
 
             if (!result.IsSuccess)
             {
@@ -445,8 +455,12 @@ public partial class ReportEditorViewModel : ViewModelBase
             }
 
             _reportVersion++;
-            IsCompleted = true;
-            SuccessMessage = "Отчёт завершён.";
+            Status = newStatus;
+
+            foreach (var field in ReportFields)
+                field.OriginalValue = field.Value ?? string.Empty;
+
+            SuccessMessage = successMessage;
         }
         finally
         {
@@ -465,9 +479,9 @@ public partial class ReportEditorViewModel : ViewModelBase
             return;
         }
 
-        if (!IsCompleted)
+        if (!IsCompletedOrArchived)
         {
-            ErrorMessage = "PDF можно сформировать только для завершённого отчёта.";
+            ErrorMessage = "Печать доступна только для завершённого или архивированного отчёта.";
             return;
         }
 
@@ -475,20 +489,70 @@ public partial class ReportEditorViewModel : ViewModelBase
 
         try
         {
-            var result = await _reportService.DownloadPdfAsync(_reportId);
+            var result = await _reportService.GetPdfAsync(_reportId);
 
-            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Data))
+            if (!result.IsSuccess || result.Data == null)
             {
                 ErrorMessage = result.ErrorMessage ?? "Не удалось сформировать PDF.";
                 return;
             }
 
-            ReportApiService.OpenFile(result.Data);
+            var filePath = Path.Combine(Path.GetTempPath(), result.Data.FileName);
+
+            await File.WriteAllBytesAsync(filePath, result.Data.Content);
+
+            ReportApiService.OpenFile(filePath);
+
             SuccessMessage = "PDF сформирован и открыт.";
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private string BuildContentJson()
+    {
+        var values = ReportFields
+            .Where(x => !string.IsNullOrWhiteSpace(x.FieldName))
+            .GroupBy(x => x.FieldName.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                x => x.Key,
+                x => x.Last().Value?.Trim() ?? string.Empty,
+                StringComparer.OrdinalIgnoreCase);
+
+        return JsonSerializer.Serialize(values);
+    }
+
+    private static Dictionary<string, string> ParseContentJson(string? contentJson)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(contentJson) || contentJson == "{}")
+            return result;
+
+        try
+        {
+            using var document = JsonDocument.Parse(contentJson);
+            var root = document.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Object)
+                return result;
+
+            foreach (var property in root.EnumerateObject())
+            {
+                var value = property.Value.ValueKind == JsonValueKind.String
+                    ? property.Value.GetString()
+                    : property.Value.GetRawText();
+
+                result[property.Name] = value ?? string.Empty;
+            }
+        }
+        catch
+        {
+            return result;
+        }
+
+        return result;
     }
 }

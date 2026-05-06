@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
-using UltrasoundAssistant.DoctorClient.Models.Commands.Report;
 using UltrasoundAssistant.DoctorClient.Models.Common;
-using UltrasoundAssistant.DoctorClient.Models.Read.Report;
+using UltrasoundAssistant.DoctorClient.Models.Commands.Reports;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Reports.Details;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Reports.Search;
 
 namespace UltrasoundAssistant.DoctorClient.Services;
 
@@ -9,86 +10,94 @@ public class ReportApiService : ApiServiceBase
 {
     private readonly HttpClient _httpClient;
 
-    public ReportApiService(HttpClient httpClient)
+    public ReportApiService(IHttpClientFactory factory)
     {
-        _httpClient = httpClient;
+        _httpClient = factory.CreateClient("AuthorizedClient");
     }
 
-    public async Task<QueryResult<List<ReportDto>>> GetAllAsync()
+    public async Task<QueryResult<ReportDto>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync("api/reports");
-        return await ReadQueryResultAsync<List<ReportDto>>(response, "Отчёты не найдены.");
-    }
-
-    public async Task<QueryResult<ReportDto>> GetByIdAsync(Guid id)
-    {
-        var response = await _httpClient.GetAsync($"api/reports/{id}");
+        var response = await _httpClient.GetAsync($"api/reports/{id}", ct);
         return await ReadQueryResultAsync<ReportDto>(response, "Отчёт не найден.");
     }
 
-    public async Task<CommandResult> CreateAsync(CreateReportCommand command)
+    public async Task<QueryResult<ReportDto>> GetByAppointmentIdAsync(
+        Guid appointmentId,
+        CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/reports", command);
+        var response = await _httpClient.GetAsync($"api/reports/by-appointment/{appointmentId}", ct);
+        return await ReadQueryResultAsync<ReportDto>(response, "Отчёт по приёму не найден.");
+    }
+
+    public async Task<QueryResult<List<ReportSummaryDto>>> SearchAsync(
+        ReportSearchRequest filter,
+        CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/reports/search", filter, ct);
+        return await ReadQueryResultAsync<List<ReportSummaryDto>>(response, "Отчёты не найдены.");
+    }
+
+    public Task<QueryResult<List<ReportSummaryDto>>> GetAllAsync(CancellationToken ct = default)
+    {
+        return SearchAsync(new ReportSearchRequest(), ct);
+    }
+
+    public async Task<CommandResult> CreateAsync(CreateReportCommand command, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/reports", command, ct);
         return await ReadCommandResultAsync(response, "Не удалось создать отчёт.");
     }
 
-    public async Task<CommandResult> UpdateFieldAsync(UpdateReportFieldCommand command)
+    public async Task<CommandResult> UpdateAsync(UpdateReportCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/reports/field", command);
-        return await ReadCommandResultAsync(response, "Не удалось обновить поле отчёта.");
+        var response = await _httpClient.PutAsJsonAsync("api/reports", command, ct);
+        return await ReadCommandResultAsync(response, "Не удалось обновить отчёт.");
     }
 
-    public async Task<CommandResult> CompleteAsync(CompleteReportCommand command)
+    public async Task<CommandResult> DeleteAsync(DeleteReportCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/reports/complete", command);
-        return await ReadCommandResultAsync(response, "Не удалось завершить отчёт.");
-    }
-
-    public async Task<CommandResult> DeleteAsync(DeleteReportCommand command)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Delete, "api/reports")
-        {
-            Content = JsonContent.Create(command)
-        };
-
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.DeleteAsJsonAsync("api/reports", command, ct);
         return await ReadCommandResultAsync(response, "Не удалось удалить отчёт.");
     }
 
-    public async Task<QueryResult<string>> DownloadPdfAsync(Guid reportId)
+    public async Task<QueryResult<ReportPdfFileDto>> GetPdfAsync(Guid reportId, CancellationToken ct = default)
     {
-        try
+        var response = await _httpClient.GetAsync($"api/reports/{reportId}/pdf", ct);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync($"api/reports/{reportId}/pdf");
+            var errorMessage = await ReadErrorMessageAsync(response, "Не удалось сформировать PDF отчёта.");
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadAsStringAsync();
-
-                return QueryResult<string>.Failure(
-                    string.IsNullOrWhiteSpace(error) ? $"Не удалось сформировать PDF: {(int)response.StatusCode}" : error);
-            }
-
-            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
-
-            if (pdfBytes.Length == 0)
-                return QueryResult<string>.Failure("Сервер вернул пустой PDF.");
-
-            var folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "UltrasoundAssistant", "Reports");
-
-            Directory.CreateDirectory(folder);
-
-            var filePath = Path.Combine(folder, $"report-{reportId:N}.pdf");
-
-            await File.WriteAllBytesAsync(filePath, pdfBytes);
-
-            return QueryResult<string>.Success(filePath);
+            return QueryResult<ReportPdfFileDto>.Failure(errorMessage);
         }
-        catch (Exception ex)
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+
+        var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/pdf";
+
+        var fileName = GetFileName(response.Content.Headers.ContentDisposition) ?? $"report-{reportId:N}.pdf";
+
+        return QueryResult<ReportPdfFileDto>.Success(new ReportPdfFileDto
         {
-            return QueryResult<string>.Failure($"Ошибка загрузки PDF: {ex.Message}");
-        }
+            FileName = fileName,
+            ContentType = contentType,
+            Content = bytes
+        });
+    }
+
+    private static string? GetFileName(
+        System.Net.Http.Headers.ContentDispositionHeaderValue? contentDisposition)
+    {
+        if (contentDisposition is null)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(contentDisposition.FileNameStar))
+            return contentDisposition.FileNameStar.Trim('"');
+
+        if (!string.IsNullOrWhiteSpace(contentDisposition.FileName))
+            return contentDisposition.FileName.Trim('"');
+
+        return null;
     }
 
     public static void OpenFile(string filePath)
@@ -100,5 +109,15 @@ public class ReportApiService : ApiServiceBase
         };
 
         System.Diagnostics.Process.Start(info);
+    }
+
+    private static async Task<string> ReadErrorMessageAsync(HttpResponseMessage response, string fallbackMessage)
+    {
+        var content = await response.Content.ReadAsStringAsync();
+
+        if (string.IsNullOrWhiteSpace(content))
+            return fallbackMessage;
+
+        return content;
     }
 }

@@ -2,13 +2,13 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using UltrasoundAssistant.DoctorClient.Helpers;
-using UltrasoundAssistant.DoctorClient.Models.Commands.Template;
-using UltrasoundAssistant.DoctorClient.Models.Read.Template;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Templates.Details;
+using UltrasoundAssistant.DoctorClient.Models.Reads.Templates.Search;
 using UltrasoundAssistant.DoctorClient.Services;
 
 namespace UltrasoundAssistant.DoctorClient.ViewModels.Template;
 
-public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
+public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateSummaryDto>
 {
     private readonly TemplateApiService _templateService;
 
@@ -38,7 +38,7 @@ public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
     private Guid? _editingTemplateId;
     private int _editingTemplateVersion;
 
-    public ObservableCollection<TemplateDto> Templates => Items;
+    public ObservableCollection<TemplateSummaryDto> Templates => Items;
 
     public ICommand LoadTemplatesCommand { get; }
     public ICommand AddTemplateCommand { get; }
@@ -70,7 +70,7 @@ public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
         Templates.Clear();
         IsEditPanelVisible = false;
 
-        var result = await _templateService.GetAllAsync();
+        var result = await _templateService.GetAllForAdminAsync();
 
         if (result.IsSuccess && result.Data != null)
             ReplaceItems(result.Data);
@@ -103,14 +103,14 @@ public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
         EditTemplateName = template.Name;
 
         EditableKeywords.Clear();
-        foreach (var keyword in template.Keywords)
-        {
-            EditableKeywords.Add(new EditableTemplateKeyword
-            {
-                Phrase = keyword.Phrase,
-                FieldName = keyword.TargetField
-            });
-        }
+        //foreach (var keyword in template.Keywords)
+        //{
+        //    EditableKeywords.Add(new EditableTemplateKeyword
+        //    {
+        //        Phrase = keyword.Phrase,
+        //        FieldName = keyword.TargetField
+        //    });
+        //}
 
         NewKeywordPhrase = string.Empty;
         NewKeywordFieldName = string.Empty;
@@ -182,51 +182,51 @@ public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
                 g => g.First().FieldName.Trim(),
                 StringComparer.OrdinalIgnoreCase);
 
-        if (_editingTemplateId == null)
-        {
-            var command = new CreateTemplateCommand
-            {
-                CommandId = Guid.NewGuid(),
-                TemplateId = Guid.NewGuid(),
-                Name = EditTemplateName.Trim(),
-                Keywords = keywords
-            };
+        //if (_editingTemplateId == null)
+        //{
+        //    var command = new CreateTemplateCommand
+        //    {
+        //        CommandId = Guid.NewGuid(),
+        //        TemplateId = Guid.NewGuid(),
+        //        Name = EditTemplateName.Trim(),
+        //        Keywords = keywords
+        //    };
 
-            var result = await _templateService.CreateAsync(command);
+        //    var result = await _templateService.CreateAsync(command);
 
-            if (result.IsSuccess)
-            {
-                CloseEditPanel();
-                RefreshLaterIfCurrent(LoadTemplatesAsync);
-            }
-            else
-            {
-                SetError(result.ErrorMessage);
-            }
-        }
-        else
-        {
-            var command = new UpdateTemplateCommand
-            {
-                CommandId = Guid.NewGuid(),
-                TemplateId = _editingTemplateId.Value,
-                ExpectedVersion = _editingTemplateVersion,
-                Name = EditTemplateName.Trim(),
-                Keywords = keywords
-            };
+        //    if (result.IsSuccess)
+        //    {
+        //        CloseEditPanel();
+        //        RefreshLaterIfCurrent(LoadTemplatesAsync);
+        //    }
+        //    else
+        //    {
+        //        SetError(result.ErrorMessage);
+        //    }
+        //}
+        //else
+        //{
+        //    var command = new UpdateTemplateCommand
+        //    {
+        //        CommandId = Guid.NewGuid(),
+        //        TemplateId = _editingTemplateId.Value,
+        //        ExpectedVersion = _editingTemplateVersion,
+        //        Name = EditTemplateName.Trim(),
+        //        Keywords = keywords
+        //    };
 
-            var result = await _templateService.UpdateAsync(command);
+        //    var result = await _templateService.UpdateAsync(command);
 
-            if (result.IsSuccess)
-            {
-                CloseEditPanel();
-                RefreshLaterIfCurrent(LoadTemplatesAsync);
-            }
-            else
-            {
-                SetError(result.ErrorMessage);
-            }
-        }
+        //    if (result.IsSuccess)
+        //    {
+        //        CloseEditPanel();
+        //        RefreshLaterIfCurrent(LoadTemplatesAsync);
+        //    }
+        //    else
+        //    {
+        //        SetError(result.ErrorMessage);
+        //    }
+        //}
     }
 
     private async Task DeleteTemplateAsync(TemplateDto? template)
@@ -236,18 +236,18 @@ public partial class TemplatesViewModel : CrudPageViewModelBase<TemplateDto>
         if (template == null)
             return;
 
-        var command = new DeleteTemplateCommand
-        {
-            CommandId = Guid.NewGuid(),
-            TemplateId = template.Id,
-            ExpectedVersion = template.Version
-        };
+        //var command = new DeleteTemplateCommand
+        //{
+        //    CommandId = Guid.NewGuid(),
+        //    TemplateId = template.Id,
+        //    ExpectedVersion = template.Version
+        //};
 
-        var result = await _templateService.DeleteAsync(command);
+        //var result = await _templateService.DeleteAsync(command);
 
-        if (result.IsSuccess)
-            RefreshLaterIfCurrent(LoadTemplatesAsync);
-        else
-            SetError(result.ErrorMessage);
+        //if (result.IsSuccess)
+        //    RefreshLaterIfCurrent(LoadTemplatesAsync);
+        //else
+        //    SetError(result.ErrorMessage);
     }
 }

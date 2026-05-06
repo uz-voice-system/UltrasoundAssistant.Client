@@ -10,12 +10,3 @@ public class VoiceProcessResult
 
     public string? Error { get; set; }
 }
-
-public class MatchedFieldResult
-{
-    public string FieldName { get; set; } = string.Empty;
-
-    public string Keyword { get; set; } = string.Empty;
-
-    public string Value { get; set; } = string.Empty;
-}

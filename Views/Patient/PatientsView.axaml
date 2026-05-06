@@ -6,73 +6,203 @@
              x:Name="Root"
              AttachedToVisualTree="UserControl_OnAttachedToVisualTree">
 
-  <Grid Margin="10" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+  <Grid Margin="14" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
 
-    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-      <Button Content="← Назад" Command="{Binding GoBackCommand}" />
-      <TextBox Width="250"
-               Watermark="Поиск по ФИО"
-               Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-      <Button Content="Найти" Command="{Binding SearchPatientsCommand}" />
-      <Button Content="Обновить" Command="{Binding LoadPatientsCommand}" />
-    </StackPanel>
+    <Border Grid.Row="0"
+            Grid.Column="0"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,10,10">
 
-    <ScrollViewer Grid.Row="1" Grid.Column="0" Height="400">
-      <DataGrid ItemsSource="{Binding Patients}" AutoGenerateColumns="False">
-        <DataGrid.Columns>
-          <DataGridTextColumn Header="ID" Binding="{Binding ShortId}" Width="150" />
-          <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="250" />
-          <DataGridTextColumn Header="Дата рождения" Binding="{Binding BirthDate}" Width="140" />
-          <DataGridTextColumn Header="Пол" Binding="{Binding Gender}" Width="100" />
-          <DataGridTemplateColumn Header="Действия" Width="220">
-            <DataGridTemplateColumn.CellTemplate>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="5">
-                  <Button Content="Изменить"
-                          Command="{Binding DataContext.EditPatientCommand, ElementName=Root}"
-                          CommandParameter="{Binding}" />
-                  <Button Content="Удалить"
-                          Command="{Binding DataContext.DeletePatientCommand, ElementName=Root}"
-                          CommandParameter="{Binding}" />
-                </StackPanel>
-              </DataTemplate>
-            </DataGridTemplateColumn.CellTemplate>
-          </DataGridTemplateColumn>
-        </DataGrid.Columns>
-      </DataGrid>
-    </ScrollViewer>
-
-    <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="0,10,0,0">
-      <Button Content="Добавить пациента" Command="{Binding AddPatientCommand}" />
-      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
-    </StackPanel>
-
-    <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1"
-            Background="#EEE"
-            Padding="10"
-            Margin="10,0,0,0"
-            IsVisible="{Binding IsEditPanelVisible}">
       <StackPanel Spacing="10">
-        <TextBlock Text="{Binding EditPanelTitle}" FontWeight="Bold" FontSize="16" />
 
-        <TextBlock Text="ФИО:" />
-        <TextBox Text="{Binding EditFullName, UpdateSourceTrigger=PropertyChanged}" />
+        <DockPanel>
+          <Button Content="← Назад"
+                  Command="{Binding GoBackCommand}"
+                  DockPanel.Dock="Left"/>
 
-        <TextBlock Text="Дата рождения:" />
-        <DatePicker SelectedDate="{Binding EditBirthDate}" />
+          <TextBlock Text="Список пациентов"
+                     FontSize="20"
+                     FontWeight="Bold"
+                     Margin="12,0,0,0"
+                     VerticalAlignment="Center"/>
+        </DockPanel>
 
-        <TextBlock Text="Пол:" />
-        <ComboBox ItemsSource="{Binding Genders}"
-                  SelectedItem="{Binding EditSelectedGender}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBox Width="280"
+                   Watermark="Быстрый поиск: ФИО, телефон, документ"
+                   Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
 
-        <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Spacing="10"
-                    Margin="0,20,0,0">
-          <Button Content="Сохранить" Command="{Binding SavePatientCommand}" />
-          <Button Content="Отмена" Command="{Binding CancelEditCommand}" />
+          <Button Content="Найти"
+                  Command="{Binding SearchPatientsCommand}" />
+
+          <Button Content="Обновить"
+                  Command="{Binding LoadPatientsCommand}" />
+
+          <Button Content="Сбросить"
+                  Command="{Binding ClearFiltersCommand}" />
         </StackPanel>
+
+        <Expander Header="Дополнительные параметры"
+                  IsExpanded="{Binding AreAdditionalFiltersVisible}">
+          <Grid ColumnDefinitions="*,*,*"
+                RowDefinitions="Auto,Auto,Auto"
+                Margin="0,10,0,0"
+                ColumnSpacing="10"
+                RowSpacing="8">
+
+            <StackPanel Grid.Row="0" Grid.Column="0">
+              <TextBlock Text="ФИО"/>
+              <TextBox Text="{Binding FilterFullName, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="1">
+              <TextBlock Text="Дата рождения"/>
+              <DatePicker SelectedDate="{Binding FilterBirthDate}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="2">
+              <TextBlock Text="Телефон"/>
+              <TextBox Text="{Binding FilterPhoneNumber, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="0">
+              <TextBlock Text="Тип документа"/>
+              <ComboBox ItemsSource="{Binding DocumentTypes}"
+                        SelectedItem="{Binding FilterDocumentType}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="1">
+              <TextBlock Text="Серия документа"/>
+              <TextBox Text="{Binding FilterDocumentSeries, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="2">
+              <TextBlock Text="Номер документа"/>
+              <TextBox Text="{Binding FilterDocumentNumber, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <CheckBox Grid.Row="2"
+                      Grid.Column="0"
+                      Content="Показывать удалённых"
+                      IsChecked="{Binding IncludeDeleted}" />
+
+          </Grid>
+        </Expander>
+
       </StackPanel>
+    </Border>
+
+    <DataGrid Grid.Row="1"
+              Grid.Column="0"
+              ItemsSource="{Binding Patients}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              GridLinesVisibility="Horizontal"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              Margin="0,0,10,0">
+
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="ФИО"
+                            Binding="{Binding FullName}"
+                            Width="2*" />
+
+        <DataGridTextColumn Header="Дата рождения"
+                            Binding="{Binding BirthDate, StringFormat='{}{0:dd.MM.yyyy}'}"
+                            Width="140" />
+
+        <DataGridTextColumn Header="Пол"
+                            Binding="{Binding Gender}"
+                            Width="100" />
+
+        <DataGridTextColumn Header="Телефон"
+                            Binding="{Binding PhoneNumber}"
+                            Width="150" />
+
+        <DataGridTemplateColumn Header="Действия" Width="210">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Content="Изменить"
+                        Command="{Binding DataContext.EditPatientCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+
+                <Button Content="Удалить"
+                        Background="#E74C3C"
+                        Foreground="White"
+                        Command="{Binding DataContext.DeletePatientCommand, ElementName=Root}"
+                        CommandParameter="{Binding}" />
+              </StackPanel>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+      </DataGrid.Columns>
+    </DataGrid>
+
+    <StackPanel Grid.Row="2"
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="10"
+                Margin="0,10,10,0">
+      <Button Content="Добавить пациента"
+              Padding="14,7"
+              Command="{Binding AddPatientCommand}" />
+
+      <TextBlock Text="{Binding ErrorMessage}"
+                 Foreground="Red"
+                 VerticalAlignment="Center" />
+    </StackPanel>
+
+    <Border Grid.Row="0"
+            Grid.RowSpan="3"
+            Grid.Column="1"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="14"
+            IsVisible="{Binding IsEditPanelVisible}">
+
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+
+          <TextBlock Text="{Binding EditPanelTitle}"
+                     FontWeight="Bold"
+                     FontSize="18" />
+
+          <TextBlock Text="ФИО"/>
+          <TextBox Text="{Binding EditFullName, UpdateSourceTrigger=PropertyChanged}" />
+
+          <TextBlock Text="Дата рождения"/>
+          <DatePicker SelectedDate="{Binding EditBirthDate}" />
+
+          <TextBlock Text="Пол"/>
+          <ComboBox ItemsSource="{Binding Genders}"
+                    SelectedItem="{Binding EditSelectedGender}" />
+
+          <TextBlock Text="Телефон"/>
+          <TextBox Text="{Binding EditPhoneNumber, UpdateSourceTrigger=PropertyChanged}" />
+
+          <TextBlock Text="Email"/>
+          <TextBox Text="{Binding EditEmail, UpdateSourceTrigger=PropertyChanged}" />
+
+          <StackPanel Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      Spacing="10"
+                      Margin="0,16,0,0">
+            <Button Content="Сохранить"
+                    Command="{Binding SavePatientCommand}" />
+
+            <Button Content="Отмена"
+                    Command="{Binding CancelEditCommand}" />
+          </StackPanel>
+
+        </StackPanel>
+      </ScrollViewer>
     </Border>
 
   </Grid>

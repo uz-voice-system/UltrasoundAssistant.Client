@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
 
-namespace UltrasoundAssistant.DoctorClient.Models.Enum;
+namespace UltrasoundAssistant.DoctorClient.Models.Enums;
 
 /// <summary>
 /// Роли пользователей в системе.

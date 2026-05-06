@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using UltrasoundAssistant.DoctorClient.Helpers;
 using UltrasoundAssistant.DoctorClient.Services;
 using UltrasoundAssistant.DoctorClient.Services.AudioService;
 using UltrasoundAssistant.DoctorClient.ViewModels;
@@ -37,15 +38,27 @@ public partial class App : Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton(new HttpClient
+        services.AddSingleton<ITokenProvider, TokenProvider>();
+        services.AddTransient<AuthHeaderHandler>();
+
+        services.AddHttpClient("UnauthorizedClient", client =>
         {
-            BaseAddress = new Uri("http://localhost:5000/")
+            client.BaseAddress = new Uri("https://api-gateway.ru.tuna.am/");
         });
+
+        services.AddHttpClient("AuthorizedClient", client =>
+        {
+            client.BaseAddress = new Uri("https://api-gateway.ru.tuna.am/");
+        }).AddHttpMessageHandler<AuthHeaderHandler>();
+
         services.AddSingleton<IAudioRecorderService, PortAudioRecorderService>();
 
         services.AddSingleton<AuthApiService>();
         services.AddSingleton<PatientApiService>();
+        services.AddSingleton<UserApiService>();
         services.AddSingleton<TemplateApiService>();
+        services.AddSingleton<AppointmentApiService>();
+        services.AddSingleton<ScheduleApiService>();
         services.AddSingleton<ReportApiService>();
         services.AddSingleton<VoiceApiService>();
 

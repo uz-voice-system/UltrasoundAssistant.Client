@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace UltrasoundAssistant.DoctorClient.Models.Enums;
 
 /// <summary>
 /// Статус отчёта ультразвукового исследования.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ReportStatus
 {
     /// <summary>

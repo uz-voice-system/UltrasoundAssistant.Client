@@ -16,8 +16,7 @@ public partial class UsersAdminView : UserControl
     {
         base.OnAttachedToVisualTree(e);
 
-        if (DataContext is UsersAdminViewModel vm &&
-            vm.LoadUsersCommand is IAsyncRelayCommand command)
+        if (DataContext is UsersAdminViewModel vm && vm.LoadUsersCommand is IAsyncRelayCommand command)
         {
             await command.ExecuteAsync(null);
         }

@@ -4,87 +4,113 @@
              x:DataType="vm:AdminDashboardViewModel"
              x:Class="UltrasoundAssistant.DoctorClient.Views.MainMenu.AdminDashboardView">
 
-    <Grid RowDefinitions="Auto,*">
+  <Grid RowDefinitions="Auto,*">
 
-        <Border Grid.Row="0"
-                Background="#F7F8FA"
-                BorderBrush="#DDDDDD"
-                BorderThickness="0,0,0,1"
-                Padding="16">
+    <Border Grid.Row="0"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="0,0,0,1"
+            Padding="16">
 
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="Панель администратора"
-                               FontSize="22"
-                               FontWeight="Bold"/>
-                    <TextBlock Text="Управление пользователями, расписаниями и шаблонами УЗИ"
-                               Foreground="#666"
-                               Margin="0,4,0,0"/>
-                </StackPanel>
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Left">
+          <TextBlock Text="Панель администратора"
+                     FontSize="22"
+                     FontWeight="Bold"/>
+          <TextBlock Text="Управление пользователями, расписаниями, шаблонами и статистикой"
+                     Foreground="#666"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
 
-                <Button Content="⎋ Выйти"
-                        Command="{Binding LogoutCommand}"
-                        HorizontalAlignment="Right"
-                        Background="#E74C3C"
-                        Foreground="White"
-                        Padding="14,7"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        CornerRadius="6"
-                        DockPanel.Dock="Right"/>
-            </DockPanel>
-        </Border>
+        <Button Content="⎋ Выйти"
+                Command="{Binding LogoutCommand}"
+                HorizontalAlignment="Right"
+                Background="#E74C3C"
+                Foreground="White"
+                Padding="14,7"
+                FontWeight="Bold"
+                BorderThickness="0"
+                CornerRadius="6"
+                DockPanel.Dock="Right"/>
+      </DockPanel>
+    </Border>
 
-        <Grid Grid.Row="1" Margin="24" ColumnDefinitions="*,*">
+    <Grid Grid.Row="1"
+          Margin="24"
+          ColumnDefinitions="*,*,*">
 
-            <Border Grid.Column="0"
-                    Background="#FFFFFF"
-                    BorderBrush="#DDDDDD"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="24"
-                    Margin="0,0,12,0">
+      <Border Grid.Column="0"
+              Background="#FFFFFF"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="24"
+              Margin="0,0,12,0">
 
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Пользователи"
-                               FontSize="20"
-                               FontWeight="Bold"/>
+        <StackPanel Spacing="12">
+          <TextBlock Text="Пользователи"
+                     FontSize="20"
+                     FontWeight="Bold"/>
 
-                    <TextBlock Text="Создание пользователей, настройка ролей, профиля врача и расписания."
-                               TextWrapping="Wrap"
-                               Foreground="#666"/>
+          <TextBlock Text="Создание пользователей, настройка ролей, профиля врача и расписания."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
 
-                    <Button Content="Открыть пользователей"
-                            Command="{Binding OpenUsersCommand}"
-                            HorizontalAlignment="Left"
-                            Padding="16,8"/>
-                </StackPanel>
-            </Border>
+          <Button Content="Открыть пользователей"
+                  Command="{Binding OpenUsersCommand}"
+                  HorizontalAlignment="Left"
+                  Padding="16,8"/>
+        </StackPanel>
+      </Border>
 
-            <Border Grid.Column="1"
-                    Background="#FFFFFF"
-                    BorderBrush="#DDDDDD"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="24"
-                    Margin="12,0,0,0">
+      <Border Grid.Column="1"
+              Background="#FFFFFF"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="24"
+              Margin="12,0,12,0">
 
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Шаблоны УЗИ"
-                               FontSize="20"
-                               FontWeight="Bold"/>
+        <StackPanel Spacing="12">
+          <TextBlock Text="Шаблоны УЗИ"
+                     FontSize="20"
+                     FontWeight="Bold"/>
 
-                    <TextBlock Text="Создание и настройка шаблонов: блоки, поля, фразы, типы и нормы."
-                               TextWrapping="Wrap"
-                               Foreground="#666"/>
+          <TextBlock Text="Создание и настройка шаблонов: блоки, поля, фразы, типы и нормы."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
 
-                    <Button Content="Открыть шаблоны"
-                            Command="{Binding OpenTemplatesCommand}"
-                            HorizontalAlignment="Left"
-                            Padding="16,8"/>
-                </StackPanel>
-            </Border>
+          <Button Content="Открыть шаблоны"
+                  Command="{Binding OpenTemplatesCommand}"
+                  HorizontalAlignment="Left"
+                  Padding="16,8"/>
+        </StackPanel>
+      </Border>
 
-        </Grid>
+      <Border Grid.Column="2"
+              Background="#FFFFFF"
+              BorderBrush="#DDDDDD"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="24"
+              Margin="12,0,0,0">
+
+        <StackPanel Spacing="12">
+          <TextBlock Text="Статистика"
+                     FontSize="20"
+                     FontWeight="Bold"/>
+
+          <TextBlock Text="Отчётность по записям, принятым пациентам, врачам, шаблонам и статусам отчётов."
+                     TextWrapping="Wrap"
+                     Foreground="#666"/>
+
+          <Button Content="Открыть статистику"
+                  Command="{Binding OpenStatisticsCommand}"
+                  HorizontalAlignment="Left"
+                  Padding="16,8"/>
+        </StackPanel>
+      </Border>
+
     </Grid>
+  </Grid>
 </UserControl>

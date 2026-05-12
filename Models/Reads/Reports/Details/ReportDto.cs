@@ -81,6 +81,32 @@ public sealed class ReportDto
     public string ContentJson { get; set; } = "{}";
 
     /// <summary>
+    /// Есть ли изображение УЗИ.
+    /// </summary>
+    public bool HasUltrasoundImage { get; set; }
+
+    /// <summary>
+    /// Название файла изображения УЗИ.
+    /// </summary>
+    public string? UltrasoundImageFileName { get; set; }
+
+    /// <summary>
+    /// MIME-тип изображения УЗИ.
+    /// </summary>
+    public string? UltrasoundImageContentType { get; set; }
+
+    /// <summary>
+    /// Изображение УЗИ в формате Base64.
+    /// Используется генератором PDF.
+    /// </summary>
+    public string? UltrasoundImageBase64 { get; set; }
+
+    /// <summary>
+    /// Дата загрузки изображения УЗИ.
+    /// </summary>
+    public DateTime? UltrasoundImageUploadedAtUtc { get; set; }
+
+    /// <summary>
     /// Признак удаления.
     /// </summary>
     public bool IsDeleted { get; set; }

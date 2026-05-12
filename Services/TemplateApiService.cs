@@ -24,13 +24,13 @@ public class TemplateApiService : ApiServiceBase
 
     public async Task<QueryResult<List<TemplateSummaryDto>>> SearchForDoctorAsync(TemplateSearchRequest filter, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/templates/search", filter, ct);
+        var response = await _httpClient.PostAsJsonAsync("api/templates/search", filter, JsonOptions, ct);
         return await ReadQueryResultAsync<List<TemplateSummaryDto>>(response, "Шаблоны не найдены.");
     }
 
     public async Task<QueryResult<List<TemplateAdminSearchResultDto>>> SearchForAdminAsync(TemplateAdminSearchRequest filter, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/templates/search-admin", filter, ct);
+        var response = await _httpClient.PostAsJsonAsync("api/templates/search-admin", filter, JsonOptions, ct);
         return await ReadQueryResultAsync<List<TemplateAdminSearchResultDto>>(response, "Шаблоны не найдены.");
     }
 
@@ -46,19 +46,24 @@ public class TemplateApiService : ApiServiceBase
 
     public async Task<CommandResult> CreateAsync(CreateTemplateCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/templates", command, ct);
+        var response = await _httpClient.PostAsJsonAsync("api/templates", command, JsonOptions, ct);
         return await ReadCommandResultAsync(response, "Не удалось создать шаблон.");
     }
 
     public async Task<CommandResult> UpdateAsync(UpdateTemplateCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync("api/templates", command, ct);
+        var response = await _httpClient.PutAsJsonAsync("api/templates", command, JsonOptions, ct);
         return await ReadCommandResultAsync(response, "Не удалось обновить шаблон.");
     }
 
     public async Task<CommandResult> DeleteAsync(DeleteTemplateCommand command, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsJsonAsync("api/templates", command, ct);
+        var request = new HttpRequestMessage(HttpMethod.Delete, "api/templates")
+        {
+            Content = JsonContent.Create(command, options: JsonOptions)
+        };
+
+        var response = await _httpClient.SendAsync(request, ct);
         return await ReadCommandResultAsync(response, "Не удалось удалить шаблон.");
     }
 }

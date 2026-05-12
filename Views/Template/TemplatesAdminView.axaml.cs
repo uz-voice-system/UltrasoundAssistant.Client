@@ -16,8 +16,7 @@ public partial class TemplatesAdminView : UserControl
     {
         base.OnAttachedToVisualTree(e);
 
-        if (DataContext is TemplatesAdminViewModel vm &&
-            vm.LoadTemplatesCommand is IAsyncRelayCommand command)
+        if (DataContext is TemplatesAdminViewModel vm && vm.LoadTemplatesCommand is IAsyncRelayCommand command)
         {
             await command.ExecuteAsync(null);
         }

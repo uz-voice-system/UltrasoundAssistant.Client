@@ -1,11 +1,22 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using UltrasoundAssistant.DoctorClient.Models.Common;
 
 namespace UltrasoundAssistant.DoctorClient.Services;
 
 public abstract class ApiServiceBase
 {
+    protected static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        }
+    };
+
     protected static async Task<QueryResult<T>> ReadQueryResultAsync<T>(HttpResponseMessage response, string notFoundMessage)
     {
         try
@@ -22,7 +33,7 @@ public abstract class ApiServiceBase
                         : error);
             }
 
-            var data = await response.Content.ReadFromJsonAsync<T>();
+            var data = await response.Content.ReadFromJsonAsync<T>(JsonOptions);
 
             return data == null
                 ? QueryResult<T>.Failure("Сервер вернул пустой ответ.")

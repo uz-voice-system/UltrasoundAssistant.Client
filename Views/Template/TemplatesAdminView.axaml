@@ -5,376 +5,426 @@
              x:DataType="vm:TemplatesAdminViewModel"
              x:Name="Root">
 
-    <Grid Margin="14" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+  <Grid Margin="14" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
 
-        <Border Grid.Row="0"
-                Grid.Column="0"
-                Background="#F7F8FA"
-                BorderBrush="#DDDDDD"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="12"
-                Margin="0,0,10,10">
+    <Border Grid.Row="0"
+            Grid.Column="0"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12"
+            Margin="0,0,10,10">
 
-            <StackPanel Spacing="10">
+      <StackPanel Spacing="10">
 
-                <DockPanel>
-                    <Button Content="← Назад"
-                            Command="{Binding GoBackCommand}"
-                            DockPanel.Dock="Left"/>
+        <DockPanel>
+          <Button Content="← Назад"
+                  Command="{Binding GoBackCommand}"
+                  DockPanel.Dock="Left"/>
 
-                    <TextBlock Text="Шаблоны УЗИ"
-                               FontSize="20"
-                               FontWeight="Bold"
-                               Margin="12,0,0,0"
-                               VerticalAlignment="Center"/>
-                </DockPanel>
+          <TextBlock Text="Шаблоны УЗИ"
+                     FontSize="20"
+                     FontWeight="Bold"
+                     Margin="12,0,0,0"
+                     VerticalAlignment="Center"/>
+        </DockPanel>
 
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBox Width="280"
-                             Watermark="Поиск по шаблону, блоку, полю или фразе"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+        <Grid ColumnDefinitions="2*,Auto,Auto,Auto"
+              ColumnSpacing="8">
 
-                    <Button Content="Найти"
-                            Command="{Binding SearchTemplatesCommand}"/>
+          <TextBox Grid.Column="0"
+                   Watermark="Поиск по названию шаблона"
+                   Text="{Binding FilterTemplateName, UpdateSourceTrigger=PropertyChanged}"
+                   VerticalAlignment="Bottom"/>
 
-                    <Button Content="Обновить"
-                            Command="{Binding LoadTemplatesCommand}"/>
+          <Button Grid.Column="1"
+                  Content="Найти"
+                  Command="{Binding SearchTemplatesCommand}"
+                  VerticalAlignment="Bottom"/>
 
-                    <Button Content="Сбросить"
-                            Command="{Binding ClearFiltersCommand}"/>
-                </StackPanel>
+          <Button Grid.Column="2"
+                  Content="Обновить"
+                  Command="{Binding LoadTemplatesCommand}"
+                  VerticalAlignment="Bottom"/>
 
-                <Expander Header="Дополнительные параметры"
-                          IsExpanded="{Binding AreAdditionalFiltersVisible}">
-                    <Grid ColumnDefinitions="*,*,*"
-                          RowDefinitions="Auto,Auto,Auto"
-                          ColumnSpacing="10"
-                          RowSpacing="8"
-                          Margin="0,10,0,0">
+          <Button Grid.Column="3"
+                  Content="Сбросить"
+                  Command="{Binding ClearFiltersCommand}"
+                  VerticalAlignment="Bottom"/>
+        </Grid>
 
-                        <StackPanel Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Название шаблона"/>
-                            <TextBox Text="{Binding FilterTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
+        <Expander Header="Дополнительные параметры поиска" 
+                  IsExpanded="{Binding AreAdditionalFiltersVisible}">
+          <Grid ColumnDefinitions="*,*,*"
+                RowDefinitions="Auto,Auto,Auto"
+                ColumnSpacing="10"
+                RowSpacing="8"
+                Margin="0,10,0,0">
 
-                        <StackPanel Grid.Row="0" Grid.Column="1">
-                            <TextBlock Text="Название блока"/>
-                            <TextBox Text="{Binding FilterBlockName, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Text="Фраза"/>
-                            <TextBox Text="{Binding FilterPhrase, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="0">
-                            <TextBlock Text="Техническое имя поля"/>
-                            <TextBox Text="{Binding FilterFieldName, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="1">
-                            <TextBlock Text="Название поля"/>
-                            <TextBox Text="{Binding FilterFieldDisplayName, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="2">
-                            <TextBlock Text="Тип поля"/>
-                            <ComboBox ItemsSource="{Binding FieldTypesFilter}"
-                                      SelectedItem="{Binding FilterFieldType}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="2" Grid.Column="0">
-                            <TextBlock Text="Роль поля"/>
-                            <ComboBox ItemsSource="{Binding FieldRolesFilter}"
-                                      SelectedItem="{Binding FilterFieldRole}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="2" Grid.Column="1">
-                            <TextBlock Text="Норма"/>
-                            <ComboBox ItemsSource="{Binding HasNormOptions}"
-                                      SelectedItem="{Binding SelectedHasNormOption}"/>
-                        </StackPanel>
-
-                        <CheckBox Grid.Row="2"
-                                  Grid.Column="2"
-                                  Content="Показывать удалённые"
-                                  IsChecked="{Binding IncludeDeleted}"
-                                  VerticalAlignment="Bottom"/>
-                    </Grid>
-                </Expander>
-
+            <StackPanel Grid.Row="0" Grid.Column="0">
+              <TextBlock Text="Название блока"/>
+              <TextBox Text="{Binding FilterBlockName, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
-        </Border>
 
-        <DataGrid Grid.Row="1"
+            <StackPanel Grid.Row="0" Grid.Column="1">
+              <TextBlock Text="Фраза блока или поля"/>
+              <TextBox Text="{Binding FilterPhrase, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="2">
+              <TextBlock Text="Тип поля"/>
+              <ComboBox ItemsSource="{Binding FieldTypeFilterOptions}"
+                        SelectedItem="{Binding FilterFieldTypeText}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="0">
+              <TextBlock Text="Техническое имя поля"/>
+              <TextBox Text="{Binding FilterFieldName, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="1">
+              <TextBlock Text="Отображаемое название поля"/>
+              <TextBox Text="{Binding FilterFieldDisplayName, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="2">
+              <TextBlock Text="Роль поля"/>
+              <ComboBox ItemsSource="{Binding FieldRoleFilterOptions}"
+                        SelectedItem="{Binding FilterFieldRoleText}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="0">
+              <TextBlock Text="Норма значения поля"/>
+              <ComboBox ItemsSource="{Binding HasNormOptions}"
+                        SelectedItem="{Binding SelectedHasNormOption}"/>
+            </StackPanel>
+
+            <CheckBox Grid.Row="2"
+                      Grid.Column="1"
+                      Content="Показывать удалённые шаблоны"
+                      IsChecked="{Binding IncludeDeleted}"
+                      VerticalAlignment="Bottom"/>
+          </Grid>
+        </Expander>
+
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer Grid.Row="1"
                   Grid.Column="0"
-                  ItemsSource="{Binding Templates}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  GridLinesVisibility="Horizontal"
-                  BorderBrush="#DDDDDD"
-                  BorderThickness="1"
+                  VerticalScrollBarVisibility="Auto"
                   Margin="0,0,10,0">
 
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Название"
-                                    Binding="{Binding Template.Name}"
-                                    Width="2*"/>
+      <ItemsControl ItemsSource="{Binding Templates}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:TemplateAdminListItem">
 
-                <DataGridTextColumn Header="Длительность"
-                                    Binding="{Binding Template.DefaultAppointmentDurationMinutes, StringFormat='{}{0} мин.'}"
-                                    Width="120"/>
+            <Border Background="{Binding CardBackground}"
+                    BorderBrush="{Binding CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12"
+                    Margin="0,0,0,10">
 
-                <DataGridTextColumn Header="Блоков"
-                                    Binding="{Binding Template.Blocks.Count}"
-                                    Width="90"/>
+              <Grid ColumnDefinitions="*,Auto"
+                    RowDefinitions="Auto,Auto"
+                    ColumnSpacing="12"
+                    RowSpacing="6">
 
-                <DataGridTextColumn Header="Удалён"
-                                    Binding="{Binding Template.IsDeleted}"
-                                    Width="90"/>
+                <StackPanel Grid.Row="0"
+                            Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="8">
 
-                <DataGridTemplateColumn Header="Действия" Width="220">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Button Content="Изменить"
-                                        Command="{Binding DataContext.EditTemplateCommand, ElementName=Root}"
+                  <TextBlock Text="{Binding Name}"
+                             FontSize="17"
+                             FontWeight="Bold"
+                             TextWrapping="Wrap"/>
+
+                  <Border Background="#E8F1FF"
+                          CornerRadius="10"
+                          Padding="8,2">
+                    <TextBlock Text="{Binding DurationText}"
+                               FontSize="12"
+                               Foreground="#2457A6"/>
+                  </Border>
+
+                  <Border Background="#EEF2F7"
+                          CornerRadius="10"
+                          Padding="8,2">
+                    <TextBlock Text="{Binding StructureText}"
+                               FontSize="12"
+                               Foreground="#444"/>
+                  </Border>
+
+                  <Border Background="{Binding StatusBackground}"
+                          CornerRadius="10"
+                          Padding="8,2"
+                          IsVisible="{Binding IsDeleted}">
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="12"
+                               Foreground="{Binding StatusForeground}"/>
+                  </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1"
+                            Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="16">
+
+                  <TextBlock Text="{Binding MatchesText}"
+                             Foreground="#666"
+                             TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+
+                  <Button Content="Изменить"
+                          Command="{Binding #Root.DataContext.EditTemplateCommand}"
+                          CommandParameter="{Binding}"/>
+
+                  <Button Content="Удалить"
+                          Background="#E74C3C"
+                          Foreground="White"
+                          Command="{Binding #Root.DataContext.DeleteTemplateCommand}"
+                          CommandParameter="{Binding}"/>
+                </StackPanel>
+
+              </Grid>
+            </Border>
+
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="2"
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="10"
+                Margin="0,10,10,0">
+
+      <Button Content="Добавить шаблон"
+              Command="{Binding AddTemplateCommand}"
+              Padding="14,7"/>
+
+      <TextBlock Text="{Binding ErrorMessage}"
+                 Foreground="Red"
+                 VerticalAlignment="Center"/>
+    </StackPanel>
+
+    <Border Grid.Row="0"
+            Grid.RowSpan="3"
+            Grid.Column="1"
+            Background="#F7F8FA"
+            BorderBrush="#DDDDDD"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="14"
+            IsVisible="{Binding IsEditPanelVisible}">
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto">
+
+        <StackPanel Spacing="12">
+
+          <TextBlock Text="{Binding EditPanelTitle}"
+                     FontSize="18"
+                     FontWeight="Bold"/>
+
+          <TextBlock Text="Название шаблона"/>
+          <TextBox Text="{Binding EditTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
+
+          <TextBlock Text="Длительность приёма по умолчанию, минут"/>
+          <NumericUpDown Minimum="5"
+                         Maximum="240"
+                         Increment="5"
+                         Value="{Binding EditDefaultAppointmentDurationMinutes}"/>
+
+          <Border Background="#FFFFFF"
+                  BorderBrush="#DDDDDD"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="10">
+
+            <StackPanel Spacing="8">
+              <TextBlock Text="Добавить блок"
+                         FontWeight="Bold"/>
+
+              <TextBlock Text="Название блока"/>
+              <TextBox Text="{Binding NewBlockName, UpdateSourceTrigger=PropertyChanged}"/>
+
+              <TextBlock Text="Фразы блока через запятую"/>
+              <TextBox Text="{Binding NewBlockPhrases, UpdateSourceTrigger=PropertyChanged}"/>
+
+              <TextBlock Text="Поле по умолчанию"/>
+              <TextBox Text="{Binding NewBlockDefaultFieldName, UpdateSourceTrigger=PropertyChanged}"/>
+
+              <Button Content="Добавить блок"
+                      Command="{Binding AddBlockCommand}"
+                      HorizontalAlignment="Left"/>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Text="Блоки шаблона"
+                     FontSize="16"
+                     FontWeight="Bold"/>
+
+          <ItemsControl ItemsSource="{Binding EditableBlocks}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:EditableTemplateBlockItem">
+
+                <Border Background="#FFFFFF"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="10"
+                        Margin="0,0,0,12">
+
+                  <StackPanel Spacing="8">
+
+                    <DockPanel>
+                      <TextBlock Text="{Binding Position, StringFormat='Блок {0}'}"
+                                 FontWeight="Bold"
+                                 FontSize="15"
+                                 DockPanel.Dock="Left"/>
+
+                      <Button Content="Удалить блок"
+                              DockPanel.Dock="Right"
+                              Background="#E74C3C"
+                              Foreground="White"
+                              Command="{Binding #Root.DataContext.RemoveBlockCommand}"
+                              CommandParameter="{Binding}"/>
+                    </DockPanel>
+
+                    <TextBlock Text="Название блока"/>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Фразы блока через запятую"/>
+                    <TextBox Text="{Binding PhrasesText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Поле по умолчанию"/>
+                    <TextBox Text="{Binding DefaultFieldName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <Button Content="Добавить поле"
+                            Command="{Binding #Root.DataContext.AddFieldCommand}"
+                            CommandParameter="{Binding}"
+                            HorizontalAlignment="Left"/>
+
+                    <ItemsControl ItemsSource="{Binding Fields}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:EditableTemplateFieldItem">
+
+                          <Border Background="#F7F8FA"
+                                  BorderBrush="#DDDDDD"
+                                  BorderThickness="1"
+                                  CornerRadius="6"
+                                  Padding="8"
+                                  Margin="12,0,0,8">
+
+                            <StackPanel Spacing="8">
+
+                              <DockPanel>
+                                <TextBlock Text="{Binding Position, StringFormat='Поле {0}'}"
+                                           FontWeight="Bold"
+                                           DockPanel.Dock="Left"/>
+
+                                <Button Content="Удалить поле"
+                                        DockPanel.Dock="Right"
+                                        Command="{Binding #Root.DataContext.RemoveFieldCommand}"
                                         CommandParameter="{Binding}"/>
+                              </DockPanel>
 
-                                <Button Content="Удалить"
-                                        Background="#E74C3C"
-                                        Foreground="White"
-                                        Command="{Binding DataContext.DeleteTemplateCommand, ElementName=Root}"
-                                        CommandParameter="{Binding}"/>
+                              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <StackPanel Grid.Column="0">
+                                  <TextBlock Text="Техническое имя"/>
+                                  <TextBox Text="{Binding FieldName, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                  <TextBlock Text="Название поля"/>
+                                  <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                              </Grid>
+
+                              <TextBlock Text="Фразы поля через запятую"/>
+                              <TextBox Text="{Binding PhrasesText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <StackPanel Grid.Column="0">
+                                  <TextBlock Text="Тип поля"/>
+                                  <ComboBox ItemsSource="{Binding #Root.DataContext.FieldTypeEditOptions}"
+                                            SelectedItem="{Binding TypeText}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                  <TextBlock Text="Роль поля"/>
+                                  <ComboBox ItemsSource="{Binding #Root.DataContext.FieldRoleEditOptions}"
+                                            SelectedItem="{Binding RoleText}"/>
+                                </StackPanel>
+                              </Grid>
+
+                              <CheckBox Content="Для поля задана норма"
+                                        IsChecked="{Binding HasNorm}"/>
+
+                              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8"
+                                    IsVisible="{Binding HasNorm}">
+                                <StackPanel Grid.Column="0">
+                                  <TextBlock Text="Мин."/>
+                                  <TextBox Text="{Binding NormMin, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                  <TextBlock Text="Макс."/>
+                                  <TextBox Text="{Binding NormMax, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                  <TextBlock Text="Ед. изм."/>
+                                  <TextBox Text="{Binding NormUnit, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                              </Grid>
+
+                              <StackPanel IsVisible="{Binding HasNorm}">
+                                <TextBlock Text="Нормальное текстовое значение"/>
+                                <TextBox Text="{Binding NormNormalText, UpdateSourceTrigger=PropertyChanged}"/>
+                              </StackPanel>
+
                             </StackPanel>
+                          </Border>
+
                         </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <StackPanel Grid.Row="2"
-                    Grid.Column="0"
-                    Orientation="Horizontal"
-                    Spacing="10"
-                    Margin="0,10,10,0">
-
-            <Button Content="Добавить шаблон"
-                    Command="{Binding AddTemplateCommand}"
-                    Padding="14,7"/>
-
-            <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="Red"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
-
-        <Border Grid.Row="0"
-                Grid.RowSpan="3"
-                Grid.Column="1"
-                Background="#F7F8FA"
-                BorderBrush="#DDDDDD"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="14"
-                IsVisible="{Binding IsEditPanelVisible}">
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto">
-
-                <StackPanel Spacing="12">
-
-                    <TextBlock Text="{Binding EditPanelTitle}"
-                               FontSize="18"
-                               FontWeight="Bold"/>
-
-                    <TextBlock Text="Название шаблона"/>
-                    <TextBox Text="{Binding EditTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
-
-                    <TextBlock Text="Длительность приёма по умолчанию, минут"/>
-                    <NumericUpDown Minimum="5"
-                                   Maximum="240"
-                                   Increment="5"
-                                   Value="{Binding EditDefaultAppointmentDurationMinutes}"/>
-
-                    <Border Background="#FFFFFF"
-                            BorderBrush="#DDDDDD"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10">
-
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Добавить блок"
-                                       FontWeight="Bold"/>
-
-                            <TextBlock Text="Название блока"/>
-                            <TextBox Text="{Binding NewBlockName, UpdateSourceTrigger=PropertyChanged}"/>
-
-                            <TextBlock Text="Фразы блока через запятую"/>
-                            <TextBox Text="{Binding NewBlockPhrases, UpdateSourceTrigger=PropertyChanged}"/>
-
-                            <TextBlock Text="Поле по умолчанию"/>
-                            <TextBox Text="{Binding NewBlockDefaultFieldName, UpdateSourceTrigger=PropertyChanged}"/>
-
-                            <Button Content="Добавить блок"
-                                    Command="{Binding AddBlockCommand}"
-                                    HorizontalAlignment="Left"/>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Блоки шаблона"
-                               FontSize="16"
-                               FontWeight="Bold"/>
-
-                    <ItemsControl ItemsSource="{Binding EditableBlocks}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:EditableTemplateBlockItem">
-
-                                <Border Background="#FFFFFF"
-                                        BorderBrush="#DDDDDD"
-                                        BorderThickness="1"
-                                        CornerRadius="8"
-                                        Padding="10"
-                                        Margin="0,0,0,12">
-
-                                    <StackPanel Spacing="8">
-
-                                        <DockPanel>
-                                            <TextBlock Text="{Binding Position, StringFormat='Блок {0}'}"
-                                                       FontWeight="Bold"
-                                                       FontSize="15"
-                                                       DockPanel.Dock="Left"/>
-
-                                            <Button Content="Удалить блок"
-                                                    DockPanel.Dock="Right"
-                                                    Background="#E74C3C"
-                                                    Foreground="White"
-                                                    Command="{Binding #Root.DataContext.RemoveBlockCommand}"
-                                                    CommandParameter="{Binding}"/>
-                                        </DockPanel>
-
-                                        <TextBlock Text="Название блока"/>
-                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                        <TextBlock Text="Фразы блока через запятую"/>
-                                        <TextBox Text="{Binding PhrasesText, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                        <TextBlock Text="Поле по умолчанию"/>
-                                        <TextBox Text="{Binding DefaultFieldName, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                        <Button Content="Добавить поле"
-                                                Command="{Binding #Root.DataContext.AddFieldCommand}"
-                                                CommandParameter="{Binding}"
-                                                HorizontalAlignment="Left"/>
-
-                                        <ItemsControl ItemsSource="{Binding Fields}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:EditableTemplateFieldItem">
-
-                                                    <Border Background="#F7F8FA"
-                                                            BorderBrush="#DDDDDD"
-                                                            BorderThickness="1"
-                                                            CornerRadius="6"
-                                                            Padding="8"
-                                                            Margin="12,0,0,8">
-
-                                                        <StackPanel Spacing="8">
-
-                                                            <DockPanel>
-                                                                <TextBlock Text="{Binding Position, StringFormat='Поле {0}'}"
-                                                                           FontWeight="Bold"
-                                                                           DockPanel.Dock="Left"/>
-
-                                                                <Button Content="Удалить поле"
-                                                                        DockPanel.Dock="Right"
-                                                                        Command="{Binding #Root.DataContext.RemoveFieldCommand}"
-                                                                        CommandParameter="{Binding}"/>
-                                                            </DockPanel>
-
-                                                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                                                                <StackPanel Grid.Column="0">
-                                                                    <TextBlock Text="Техническое имя"/>
-                                                                    <TextBox Text="{Binding FieldName, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </StackPanel>
-
-                                                                <StackPanel Grid.Column="1">
-                                                                    <TextBlock Text="Название поля"/>
-                                                                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </StackPanel>
-                                                            </Grid>
-
-                                                            <TextBlock Text="Фразы поля через запятую"/>
-                                                            <TextBox Text="{Binding PhrasesText, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                                                                <StackPanel Grid.Column="0">
-                                                                    <TextBlock Text="Тип поля"/>
-                                                                    <ComboBox ItemsSource="{Binding #Root.DataContext.FieldTypes}"
-                                                                              SelectedItem="{Binding Type}"/>
-                                                                </StackPanel>
-
-                                                                <StackPanel Grid.Column="1">
-                                                                    <TextBlock Text="Роль поля"/>
-                                                                    <ComboBox ItemsSource="{Binding #Root.DataContext.FieldRoles}"
-                                                                              SelectedItem="{Binding Role}"/>
-                                                                </StackPanel>
-                                                            </Grid>
-
-                                                            <CheckBox Content="Есть норма"
-                                                                      IsChecked="{Binding HasNorm}"/>
-
-                                                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8"
-                                                                  IsVisible="{Binding HasNorm}">
-                                                                <StackPanel Grid.Column="0">
-                                                                    <TextBlock Text="Мин."/>
-                                                                    <TextBox Text="{Binding NormMin, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </StackPanel>
-
-                                                                <StackPanel Grid.Column="1">
-                                                                    <TextBlock Text="Макс."/>
-                                                                    <TextBox Text="{Binding NormMax, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </StackPanel>
-
-                                                                <StackPanel Grid.Column="2">
-                                                                    <TextBlock Text="Ед. изм."/>
-                                                                    <TextBox Text="{Binding NormUnit, UpdateSourceTrigger=PropertyChanged}"/>
-                                                                </StackPanel>
-                                                            </Grid>
-
-                                                            <StackPanel IsVisible="{Binding HasNorm}">
-                                                                <TextBlock Text="Нормальное текстовое значение"/>
-                                                                <TextBox Text="{Binding NormNormalText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            </StackPanel>
-
-                                                        </StackPanel>
-                                                    </Border>
-
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-
-                                    </StackPanel>
-                                </Border>
-
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
+                      </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                Spacing="10"
-                                Margin="0,16,0,0">
+                  </StackPanel>
+                </Border>
 
-                        <Button Content="Сохранить"
-                                Command="{Binding SaveTemplateCommand}"/>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
 
-                        <Button Content="Отмена"
-                                Command="{Binding CancelEditCommand}"/>
-                    </StackPanel>
+          <StackPanel Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      Spacing="10"
+                      Margin="0,16,0,0">
 
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
+            <Button Content="Сохранить"
+                    Command="{Binding SaveTemplateCommand}"/>
 
-    </Grid>
+            <Button Content="Отмена"
+                    Command="{Binding CancelEditCommand}"/>
+          </StackPanel>
+
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+  </Grid>
 </UserControl>

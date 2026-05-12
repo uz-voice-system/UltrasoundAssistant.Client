@@ -6,39 +6,34 @@ using UltrasoundAssistant.DoctorClient.Helpers;
 using UltrasoundAssistant.DoctorClient.Models.Commands.Templates;
 using UltrasoundAssistant.DoctorClient.Models.Entity.Templates;
 using UltrasoundAssistant.DoctorClient.Models.Reads.Templates.Admin;
-using UltrasoundAssistant.DoctorClient.Models.Reads.Templates.Details;
 using UltrasoundAssistant.DoctorClient.Services;
+using SharedBoolFilterOption = UltrasoundAssistant.DoctorClient.ViewModels.BoolFilterOption;
 
 namespace UltrasoundAssistant.DoctorClient.ViewModels.Template;
 
-public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearchResultDto>
+public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminListItem>
 {
     private readonly TemplateApiService _templateService;
 
     private Guid? _editingTemplateId;
     private int _editingTemplateVersion;
 
-    public ObservableCollection<TemplateAdminSearchResultDto> Templates => Items;
+    public ObservableCollection<TemplateAdminListItem> Templates => Items;
     public ObservableCollection<EditableTemplateBlockItem> EditableBlocks { get; } = new();
 
-    public ObservableCollection<TemplateFieldType?> FieldTypesFilter { get; } = new();
-    public ObservableCollection<TemplateFieldRole?> FieldRolesFilter { get; } = new();
-    public ObservableCollection<TemplateFieldType> FieldTypes { get; } = new();
-    public ObservableCollection<TemplateFieldRole> FieldRoles { get; } = new();
-    public ObservableCollection<BoolFilterOption> HasNormOptions { get; } = new();
+    public ObservableCollection<string> FieldTypeFilterOptions { get; } = new();
+    public ObservableCollection<string> FieldRoleFilterOptions { get; } = new();
+
+    public ObservableCollection<string> FieldTypeEditOptions { get; } = new();
+    public ObservableCollection<string> FieldRoleEditOptions { get; } = new();
+
+    public ObservableCollection<SharedBoolFilterOption> HasNormOptions { get; } = new();
 
     private bool _areAdditionalFiltersVisible;
     public bool AreAdditionalFiltersVisible
     {
         get => _areAdditionalFiltersVisible;
         set => SetProperty(ref _areAdditionalFiltersVisible, value);
-    }
-
-    private string _searchText = string.Empty;
-    public string SearchText
-    {
-        get => _searchText;
-        set => SetProperty(ref _searchText, value);
     }
 
     private string _filterTemplateName = string.Empty;
@@ -76,22 +71,22 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
         set => SetProperty(ref _filterPhrase, value);
     }
 
-    private TemplateFieldType? _filterFieldType;
-    public TemplateFieldType? FilterFieldType
+    private string _filterFieldTypeText = "Все типы полей";
+    public string FilterFieldTypeText
     {
-        get => _filterFieldType;
-        set => SetProperty(ref _filterFieldType, value);
+        get => _filterFieldTypeText;
+        set => SetProperty(ref _filterFieldTypeText, value);
     }
 
-    private TemplateFieldRole? _filterFieldRole;
-    public TemplateFieldRole? FilterFieldRole
+    private string _filterFieldRoleText = "Все роли поля";
+    public string FilterFieldRoleText
     {
-        get => _filterFieldRole;
-        set => SetProperty(ref _filterFieldRole, value);
+        get => _filterFieldRoleText;
+        set => SetProperty(ref _filterFieldRoleText, value);
     }
 
-    private BoolFilterOption? _selectedHasNormOption;
-    public BoolFilterOption? SelectedHasNormOption
+    private SharedBoolFilterOption? _selectedHasNormOption;
+    public SharedBoolFilterOption? SelectedHasNormOption
     {
         get => _selectedHasNormOption;
         set => SetProperty(ref _selectedHasNormOption, value);
@@ -142,7 +137,6 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
     public ICommand LoadTemplatesCommand { get; }
     public ICommand SearchTemplatesCommand { get; }
     public ICommand ClearFiltersCommand { get; }
-    public ICommand ToggleAdditionalFiltersCommand { get; }
 
     public ICommand AddTemplateCommand { get; }
     public ICommand EditTemplateCommand { get; }
@@ -162,42 +156,43 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
     {
         _templateService = templateService;
 
-        FieldTypesFilter.Add(null);
-        foreach (var type in Enum.GetValues<TemplateFieldType>())
-        {
-            FieldTypesFilter.Add(type);
-            FieldTypes.Add(type);
-        }
+        FieldTypeFilterOptions.Add("Все типы полей");
+        FieldTypeFilterOptions.Add("Текст");
+        FieldTypeFilterOptions.Add("Число");
+        FieldTypeFilterOptions.Add("Число с единицей измерения");
+        FilterFieldTypeText = FieldTypeFilterOptions[0];
 
-        FieldRolesFilter.Add(null);
-        foreach (var role in Enum.GetValues<TemplateFieldRole>())
-        {
-            FieldRolesFilter.Add(role);
-            FieldRoles.Add(role);
-        }
+        FieldRoleFilterOptions.Add("Все роли поля");
+        FieldRoleFilterOptions.Add("Обычное поле");
+        FieldRoleFilterOptions.Add("Описание исследования");
+        FieldRoleFilterOptions.Add("Заключение исследования");
+        FilterFieldRoleText = FieldRoleFilterOptions[0];
 
-        HasNormOptions.Add(new BoolFilterOption("Все", null));
-        HasNormOptions.Add(new BoolFilterOption("С нормой", true));
-        HasNormOptions.Add(new BoolFilterOption("Без нормы", false));
+        FieldTypeEditOptions.Add("Текст");
+        FieldTypeEditOptions.Add("Число");
+        FieldTypeEditOptions.Add("Число с единицей измерения");
+
+        FieldRoleEditOptions.Add("Обычное поле");
+        FieldRoleEditOptions.Add("Описание исследования");
+        FieldRoleEditOptions.Add("Заключение исследования");
+
+        HasNormOptions.Add(new SharedBoolFilterOption("Все поля: с нормой и без нормы", null));
+        HasNormOptions.Add(new SharedBoolFilterOption("Только поля, где задана норма", true));
+        HasNormOptions.Add(new SharedBoolFilterOption("Только поля без нормы", false));
         SelectedHasNormOption = HasNormOptions[0];
 
         LoadTemplatesCommand = new AsyncRelayCommand(LoadTemplatesAsync);
         SearchTemplatesCommand = new AsyncRelayCommand(SearchTemplatesAsync);
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
 
-        ToggleAdditionalFiltersCommand = new RelayCommandSync(_ =>
-        {
-            AreAdditionalFiltersVisible = !AreAdditionalFiltersVisible;
-        });
-
         AddTemplateCommand = new RelayCommandSync(_ => OpenEditPanelForAdd());
 
-        EditTemplateCommand = new RelayCommand<TemplateAdminSearchResultDto?>(async item =>
+        EditTemplateCommand = new RelayCommand<TemplateAdminListItem?>(async item =>
         {
             await OpenEditPanelForEditAsync(item);
         });
 
-        DeleteTemplateCommand = new RelayCommand<TemplateAdminSearchResultDto?>(async item =>
+        DeleteTemplateCommand = new RelayCommand<TemplateAdminListItem?>(async item =>
         {
             await DeleteTemplateAsync(item);
         });
@@ -230,10 +225,13 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
 
         var result = await _templateService.GetAllForAdminAsync();
 
-        if (result.IsSuccess && result.Data != null)
-            ReplaceItems(result.Data);
-        else
+        if (!result.IsSuccess || result.Data == null)
+        {
             SetError(result.ErrorMessage);
+            return;
+        }
+
+        await ReplaceTemplatesAsync(result.Data);
     }
 
     private async Task SearchTemplatesAsync()
@@ -242,46 +240,75 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
 
         var filter = new TemplateAdminSearchRequest
         {
-            SearchText = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
-            TemplateName = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterTemplateName)
-                ? FilterTemplateName.Trim()
-                : null,
+            TemplateName = string.IsNullOrWhiteSpace(FilterTemplateName)
+                ? null
+                : FilterTemplateName.Trim(),
+
             BlockName = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterBlockName)
                 ? FilterBlockName.Trim()
                 : null,
+
             FieldName = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterFieldName)
                 ? FilterFieldName.Trim()
                 : null,
+
             FieldDisplayName = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterFieldDisplayName)
                 ? FilterFieldDisplayName.Trim()
                 : null,
+
             Phrase = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterPhrase)
                 ? FilterPhrase.Trim()
                 : null,
-            FieldType = AreAdditionalFiltersVisible ? FilterFieldType : null,
-            FieldRole = AreAdditionalFiltersVisible ? FilterFieldRole : null,
+
+            FieldType = AreAdditionalFiltersVisible ? MapNullableFieldType(FilterFieldTypeText) : null,
+            FieldRole = AreAdditionalFiltersVisible ? MapNullableFieldRole(FilterFieldRoleText) : null,
             HasNorm = AreAdditionalFiltersVisible ? SelectedHasNormOption?.Value : null,
             IncludeDeleted = IncludeDeleted
         };
 
         var result = await _templateService.SearchForAdminAsync(filter);
 
-        if (result.IsSuccess && result.Data != null)
-            ReplaceItems(result.Data);
-        else
+        if (!result.IsSuccess || result.Data == null)
+        {
             SetError(result.ErrorMessage);
+            return;
+        }
+
+        await ReplaceTemplatesAsync(result.Data);
+    }
+
+    private async Task ReplaceTemplatesAsync(List<TemplateAdminSearchResultDto> source)
+    {
+        var result = new List<TemplateAdminListItem>();
+
+        foreach (var item in source)
+        {
+            if (item.Template.Id != Guid.Empty)
+            {
+                var detailResult = await _templateService.GetByIdAsync(item.Template.Id);
+
+                if (detailResult.IsSuccess && detailResult.Data != null)
+                    item.Template = detailResult.Data;
+            }
+
+            result.Add(new TemplateAdminListItem(item));
+        }
+
+        ReplaceItems(result
+            .OrderBy(x => x.IsDeleted)
+            .ThenBy(x => x.Name)
+            .ToList());
     }
 
     private async Task ClearFiltersAsync()
     {
-        SearchText = string.Empty;
         FilterTemplateName = string.Empty;
         FilterBlockName = string.Empty;
         FilterFieldName = string.Empty;
         FilterFieldDisplayName = string.Empty;
         FilterPhrase = string.Empty;
-        FilterFieldType = null;
-        FilterFieldRole = null;
+        FilterFieldTypeText = FieldTypeFilterOptions[0];
+        FilterFieldRoleText = FieldRoleFilterOptions[0];
         SelectedHasNormOption = HasNormOptions[0];
         IncludeDeleted = false;
 
@@ -304,14 +331,14 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
         NewBlockDefaultFieldName = string.Empty;
     }
 
-    private async Task OpenEditPanelForEditAsync(TemplateAdminSearchResultDto? item)
+    private async Task OpenEditPanelForEditAsync(TemplateAdminListItem? item)
     {
         ClearError();
 
-        if (item?.Template == null)
+        if (item == null)
             return;
 
-        var result = await _templateService.GetByIdAsync(item.Template.Id);
+        var result = await _templateService.GetByIdAsync(item.Id);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -351,8 +378,8 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
                     DisplayName = field.DisplayName,
                     Position = field.Position,
                     PhrasesText = JoinPhrases(field.Phrases),
-                    Type = field.Type,
-                    Role = field.Role,
+                    TypeText = GetFieldTypeText(field.Type),
+                    RoleText = GetFieldRoleText(field.Role),
                     HasNorm = field.Norm != null,
                     NormMin = field.Norm?.Min?.ToString("0.##", CultureInfo.CurrentCulture) ?? string.Empty,
                     NormMax = field.Norm?.Max?.ToString("0.##", CultureInfo.CurrentCulture) ?? string.Empty,
@@ -431,8 +458,8 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
             FieldName = $"field_{block.Fields.Count + 1}",
             DisplayName = "Новое поле",
             Position = block.Fields.Count + 1,
-            Type = TemplateFieldType.Text,
-            Role = TemplateFieldRole.Regular,
+            TypeText = "Текст",
+            RoleText = "Обычное поле",
             HasNorm = false
         });
     }
@@ -512,7 +539,7 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
         }
 
         CloseEditPanel();
-        await SearchTemplatesAsync();
+        RefreshLaterIfCurrent(SearchTemplatesAsync);
     }
 
     private List<TemplateBlockDto>? BuildBlocks()
@@ -538,7 +565,7 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
                 DefaultFieldName = string.IsNullOrWhiteSpace(block.DefaultFieldName)
                     ? null
                     : block.DefaultFieldName.Trim(),
-                Fields = new List<TemplateFieldDto>()
+                Fields = []
             };
 
             foreach (var field in block.Fields)
@@ -567,8 +594,8 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
                     DisplayName = field.DisplayName.Trim(),
                     Position = field.Position,
                     Phrases = SplitPhrases(field.PhrasesText),
-                    Type = field.Type,
-                    Role = field.Role,
+                    Type = MapFieldType(field.TypeText),
+                    Role = MapFieldRole(field.RoleText),
                     Norm = norm
                 });
             }
@@ -618,23 +645,23 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
         };
     }
 
-    private async Task DeleteTemplateAsync(TemplateAdminSearchResultDto? item)
+    private async Task DeleteTemplateAsync(TemplateAdminListItem? item)
     {
         ClearError();
 
-        if (item?.Template == null)
+        if (item == null)
             return;
 
         var command = new DeleteTemplateCommand
         {
-            TemplateId = item.Template.Id,
-            ExpectedVersion = item.Template.Version
+            TemplateId = item.Id,
+            ExpectedVersion = item.Version
         };
 
         var result = await _templateService.DeleteAsync(command);
 
         if (result.IsSuccess)
-            await SearchTemplatesAsync();
+            RefreshLaterIfCurrent(SearchTemplatesAsync);
         else
             SetError(result.ErrorMessage);
     }
@@ -674,5 +701,59 @@ public class TemplatesAdminViewModel : CrudPageViewModelBase<TemplateAdminSearch
     {
         return decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out value)
                || decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static TemplateFieldType? MapNullableFieldType(string? text)
+    {
+        return text switch
+        {
+            "Текст" => TemplateFieldType.Text,
+            "Число" => TemplateFieldType.Number,
+            "Число с единицей измерения" => TemplateFieldType.NumberWithUnit,
+            _ => null
+        };
+    }
+
+    private static TemplateFieldType MapFieldType(string text)
+    {
+        return MapNullableFieldType(text) ?? TemplateFieldType.Text;
+    }
+
+    private static string GetFieldTypeText(TemplateFieldType type)
+    {
+        return type switch
+        {
+            TemplateFieldType.Text => "Текст",
+            TemplateFieldType.Number => "Число",
+            TemplateFieldType.NumberWithUnit => "Число с единицей измерения",
+            _ => type.ToString()
+        };
+    }
+
+    private static TemplateFieldRole? MapNullableFieldRole(string? text)
+    {
+        return text switch
+        {
+            "Обычное поле" => TemplateFieldRole.Regular,
+            "Описание исследования" => TemplateFieldRole.Description,
+            "Заключение исследования" => TemplateFieldRole.Conclusion,
+            _ => null
+        };
+    }
+
+    private static TemplateFieldRole MapFieldRole(string text)
+    {
+        return MapNullableFieldRole(text) ?? TemplateFieldRole.Regular;
+    }
+
+    private static string GetFieldRoleText(TemplateFieldRole role)
+    {
+        return role switch
+        {
+            TemplateFieldRole.Regular => "Обычное поле",
+            TemplateFieldRole.Description => "Описание исследования",
+            TemplateFieldRole.Conclusion => "Заключение исследования",
+            _ => role.ToString()
+        };
     }
 }

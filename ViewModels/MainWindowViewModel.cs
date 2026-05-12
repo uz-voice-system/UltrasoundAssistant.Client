@@ -61,7 +61,8 @@ public partial class MainWindowViewModel : ViewModelBase
             this,
             templateApiService,
             userApiService,
-            scheduleApiService
+            scheduleApiService,
+            reportApiService
         );
 
         _doctorDashboardViewModel = new DoctorDashboardViewModel(

@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using UltrasoundAssistant.DoctorClient.Models.Entity.Templates;
 
 namespace UltrasoundAssistant.DoctorClient.ViewModels.Template;
 
@@ -21,10 +20,10 @@ public partial class EditableTemplateFieldItem : ObservableObject
     private string phrasesText = string.Empty;
 
     [ObservableProperty]
-    private TemplateFieldType type = TemplateFieldType.Text;
+    private string typeText = "Текст";
 
     [ObservableProperty]
-    private TemplateFieldRole role = TemplateFieldRole.Regular;
+    private string roleText = "Обычное поле";
 
     [ObservableProperty]
     private bool hasNorm;

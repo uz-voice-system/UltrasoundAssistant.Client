@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -23,5 +23,11 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\Template\TemplatesAdminView.axaml.cs">
+      <DependentUpon>TemplatesAdminView.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

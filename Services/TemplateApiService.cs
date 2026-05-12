@@ -28,10 +28,10 @@ public class TemplateApiService : ApiServiceBase
         return await ReadQueryResultAsync<List<TemplateSummaryDto>>(response, "Шаблоны не найдены.");
     }
 
-    public async Task<QueryResult<List<TemplateSummaryDto>>> SearchForAdminAsync(TemplateAdminSearchRequest filter, CancellationToken ct = default)
+    public async Task<QueryResult<List<TemplateAdminSearchResultDto>>> SearchForAdminAsync(TemplateAdminSearchRequest filter, CancellationToken ct = default)
     {
         var response = await _httpClient.PostAsJsonAsync("api/templates/search-admin", filter, ct);
-        return await ReadQueryResultAsync<List<TemplateSummaryDto>>(response, "Шаблоны не найдены.");
+        return await ReadQueryResultAsync<List<TemplateAdminSearchResultDto>>(response, "Шаблоны не найдены.");
     }
 
     public Task<QueryResult<List<TemplateSummaryDto>>> GetAllForDoctorAsync(CancellationToken ct = default)
@@ -39,7 +39,7 @@ public class TemplateApiService : ApiServiceBase
         return SearchForDoctorAsync(new TemplateSearchRequest(), ct);
     }
 
-    public Task<QueryResult<List<TemplateSummaryDto>>> GetAllForAdminAsync(CancellationToken ct = default)
+    public Task<QueryResult<List<TemplateAdminSearchResultDto>>> GetAllForAdminAsync(CancellationToken ct = default)
     {
         return SearchForAdminAsync(new TemplateAdminSearchRequest(), ct);
     }

@@ -1,0 +1,251 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrasoundAssistant.DoctorClient.ViewModels.User"
+             x:Class="UltrasoundAssistant.DoctorClient.Views.User.UsersAdminView"
+             x:DataType="vm:UsersAdminViewModel"
+             x:Name="Root">
+
+    <Grid Margin="14" RowDefinitions="Auto,*,Auto" ColumnDefinitions="3*,2*">
+
+        <Border Grid.Row="0"
+                Grid.Column="0"
+                Background="#F7F8FA"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,0,10,10">
+
+            <StackPanel Spacing="10">
+
+                <DockPanel>
+                    <Button Content="← Назад"
+                            Command="{Binding GoBackCommand}"
+                            DockPanel.Dock="Left"/>
+
+                    <TextBlock Text="Пользователи"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Margin="12,0,0,0"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBox Width="260"
+                             Watermark="Поиск по логину или ФИО"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <ComboBox Width="150"
+                              ItemsSource="{Binding Roles}"
+                              SelectedItem="{Binding FilterRole}"/>
+
+                    <ComboBox Width="150"
+                              ItemsSource="{Binding ActiveOptions}"
+                              SelectedItem="{Binding SelectedActiveOption}"/>
+
+                    <Button Content="Найти"
+                            Command="{Binding SearchUsersCommand}"/>
+
+                    <Button Content="Обновить"
+                            Command="{Binding LoadUsersCommand}"/>
+
+                    <Button Content="Сбросить"
+                            Command="{Binding ClearFiltersCommand}"/>
+                </StackPanel>
+
+                <Expander Header="Дополнительные параметры"
+                          IsExpanded="{Binding AreAdditionalFiltersVisible}">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Логин"/>
+                            <TextBox Text="{Binding FilterLogin, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="ФИО"/>
+                            <TextBox Text="{Binding FilterFullName, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                </Expander>
+
+            </StackPanel>
+        </Border>
+
+        <DataGrid Grid.Row="1"
+                  Grid.Column="0"
+                  ItemsSource="{Binding Users}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  BorderBrush="#DDDDDD"
+                  BorderThickness="1"
+                  Margin="0,0,10,0">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Логин"
+                                    Binding="{Binding Login}"
+                                    Width="150"/>
+
+                <DataGridTextColumn Header="ФИО"
+                                    Binding="{Binding FullName}"
+                                    Width="2*"/>
+
+                <DataGridTextColumn Header="Роль"
+                                    Binding="{Binding Role}"
+                                    Width="130"/>
+
+                <DataGridTextColumn Header="Активен"
+                                    Binding="{Binding IsActive}"
+                                    Width="90"/>
+
+                <DataGridTextColumn Header="Специализация"
+                                    Binding="{Binding Specialization}"
+                                    Width="170"/>
+
+                <DataGridTextColumn Header="Кабинет"
+                                    Binding="{Binding Cabinet}"
+                                    Width="100"/>
+
+                <DataGridTemplateColumn Header="Действия" Width="300">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="Изменить"
+                                        Command="{Binding DataContext.EditUserCommand, ElementName=Root}"
+                                        CommandParameter="{Binding}"/>
+
+                                <Button Content="Активировать"
+                                        Command="{Binding DataContext.ActivateUserCommand, ElementName=Root}"
+                                        CommandParameter="{Binding}"/>
+
+                                <Button Content="Деактивировать"
+                                        Background="#E74C3C"
+                                        Foreground="White"
+                                        Command="{Binding DataContext.DeactivateUserCommand, ElementName=Root}"
+                                        CommandParameter="{Binding}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2"
+                    Grid.Column="0"
+                    Orientation="Horizontal"
+                    Spacing="10"
+                    Margin="0,10,10,0">
+
+            <Button Content="Добавить пользователя"
+                    Command="{Binding AddUserCommand}"
+                    Padding="14,7"/>
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="Red"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <Border Grid.Row="0"
+                Grid.RowSpan="3"
+                Grid.Column="1"
+                Background="#F7F8FA"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="14"
+                IsVisible="{Binding IsEditPanelVisible}">
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="10">
+
+                    <TextBlock Text="{Binding EditPanelTitle}"
+                               FontSize="18"
+                               FontWeight="Bold"/>
+
+                    <TextBlock Text="Логин"/>
+                    <TextBox Text="{Binding EditLogin, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Пароль"/>
+                    <TextBox PasswordChar="•"
+                             Watermark="Для нового пользователя обязателен. При редактировании можно оставить пустым."
+                             Text="{Binding EditPassword, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="ФИО"/>
+                    <TextBox Text="{Binding EditFullName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Роль"/>
+                    <ComboBox ItemsSource="{Binding Roles}"
+                              SelectedItem="{Binding EditRole}"/>
+
+                    <CheckBox Content="Пользователь активен"
+                              IsChecked="{Binding EditIsActive}"/>
+
+                    <Border Background="#FFFFFF"
+                            BorderBrush="#DDDDDD"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10"
+                            IsVisible="{Binding IsDoctorRoleSelected}">
+
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Профиль врача"
+                                       FontWeight="Bold"
+                                       FontSize="16"/>
+
+                            <TextBlock Text="Специализация"/>
+                            <TextBox Text="{Binding EditSpecialization, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Кабинет"/>
+                            <TextBox Text="{Binding EditCabinet, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Внутренний телефон"/>
+                            <TextBox Text="{Binding EditPhoneExtension, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Расписание врача"
+                                       FontWeight="Bold"
+                                       FontSize="16"
+                                       Margin="0,10,0,0"/>
+
+                            <ItemsControl ItemsSource="{Binding ScheduleItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:EditableUserScheduleItem">
+                                        <Grid ColumnDefinitions="120,*,*"
+                                              ColumnSpacing="8"
+                                              Margin="0,0,0,8">
+
+                                            <CheckBox Grid.Column="0"
+                                                      Content="{Binding DayName}"
+                                                      IsChecked="{Binding IsEnabled}"/>
+
+                                            <TimePicker Grid.Column="1"
+                                                        SelectedTime="{Binding StartTime}"
+                                                        IsEnabled="{Binding IsEnabled}"/>
+
+                                            <TimePicker Grid.Column="2"
+                                                        SelectedTime="{Binding EndTime}"
+                                                        IsEnabled="{Binding IsEnabled}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="10"
+                                Margin="0,16,0,0">
+
+                        <Button Content="Сохранить"
+                                Command="{Binding SaveUserCommand}"/>
+
+                        <Button Content="Отмена"
+                                Command="{Binding CancelEditCommand}"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+    </Grid>
+</UserControl>

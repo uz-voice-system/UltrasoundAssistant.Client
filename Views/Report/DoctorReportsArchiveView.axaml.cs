@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using CommunityToolkit.Mvvm.Input;
 using UltrasoundAssistant.DoctorClient.ViewModels.Report;
 
@@ -15,9 +14,12 @@ public partial class DoctorReportsArchiveView : UserControl
 
     private async void UserControl_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (DataContext is DoctorReportsArchiveViewModel vm && vm.LoadReportsCommand is IAsyncRelayCommand command)
-        {
-            await command.ExecuteAsync(null);
-        }
+        if (DataContext is not DoctorReportsArchiveViewModel vm)
+            return;
+
+        if (vm.LoadReportsCommand is IAsyncRelayCommand asyncCommand)
+            await asyncCommand.ExecuteAsync(null);
+        else if (vm.LoadReportsCommand.CanExecute(null))
+            vm.LoadReportsCommand.Execute(null);
     }
 }

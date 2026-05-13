@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using Avalonia.Media;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using UltrasoundAssistant.DoctorClient.Helpers;
@@ -21,8 +22,9 @@ public class DoctorDashboardViewModel : ViewModelBase
     private readonly VoiceApiService _voiceApiService;
     private readonly IAudioRecorderService _audioRecorderService;
 
-    public ObservableCollection<AppointmentSummaryDto> TodayAppointments { get; } = new();
-    public ObservableCollection<AppointmentStatus?> Statuses { get; } = new();
+    public ObservableCollection<DoctorAppointmentCardItem> TodayAppointments { get; } = new();
+
+    public ObservableCollection<string> StatusOptions { get; } = new();
 
     private string _searchText = string.Empty;
     public string SearchText
@@ -45,11 +47,11 @@ public class DoctorDashboardViewModel : ViewModelBase
         set => SetProperty(ref _filterToDate, value);
     }
 
-    private AppointmentStatus? _selectedStatus;
-    public AppointmentStatus? SelectedStatus
+    private string _selectedStatusText = "Все статусы записи";
+    public string SelectedStatusText
     {
-        get => _selectedStatus;
-        set => SetProperty(ref _selectedStatus, value);
+        get => _selectedStatusText;
+        set => SetProperty(ref _selectedStatusText, value);
     }
 
     private bool _areAdditionalFiltersVisible;
@@ -104,9 +106,14 @@ public class DoctorDashboardViewModel : ViewModelBase
         _voiceApiService = voiceApiService;
         _audioRecorderService = audioRecorderService;
 
-        Statuses.Add(null);
-        foreach (var status in Enum.GetValues<AppointmentStatus>())
-            Statuses.Add(status);
+        StatusOptions.Add("Все статусы записи");
+        StatusOptions.Add("Запланирована");
+        StatusOptions.Add("В процессе");
+        StatusOptions.Add("Завершена");
+        StatusOptions.Add("Отменена");
+        StatusOptions.Add("Неявка");
+
+        SelectedStatusText = StatusOptions[0];
 
         LogoutCommand = main.LogoutCommand;
 
@@ -119,17 +126,22 @@ public class DoctorDashboardViewModel : ViewModelBase
             AreAdditionalFiltersVisible = !AreAdditionalFiltersVisible;
         });
 
-        OpenReportCommand = new RelayCommand<AppointmentSummaryDto?>(async a =>
+        OpenReportCommand = new RelayCommand<DoctorAppointmentCardItem?>(async item =>
         {
-            await OpenReportAsync(a);
+            await OpenReportAsync(item);
         });
 
-        MarkNoShowCommand = new RelayCommand<AppointmentSummaryDto?>(async a =>
+        MarkNoShowCommand = new RelayCommand<DoctorAppointmentCardItem?>(async item =>
         {
-            await MarkNoShowAsync(a);
+            await MarkNoShowAsync(item);
         });
 
         OpenReportsArchiveCommand = new RelayCommandSync(_ => OpenReportsArchive());
+    }
+
+    public async Task InitializeAsync()
+    {
+        await LoadTodayAppointmentsAsync();
     }
 
     private async Task LoadTodayAppointmentsAsync()
@@ -146,16 +158,34 @@ public class DoctorDashboardViewModel : ViewModelBase
         SuccessMessage = null;
         TodayAppointments.Clear();
 
-        var from = FilterFromDate?.DateTime.Date ?? DateTime.Now.Date;
-        var to = (FilterToDate?.DateTime.Date ?? from).AddDays(1);
+        if (FilterFromDate == null)
+        {
+            ErrorMessage = "Укажите дату начала периода.";
+            return;
+        }
+
+        if (FilterToDate == null)
+        {
+            ErrorMessage = "Укажите дату окончания периода.";
+            return;
+        }
+
+        var fromDate = FilterFromDate.Value.Date;
+        var toDate = FilterToDate.Value.Date;
+
+        if (fromDate > toDate)
+        {
+            ErrorMessage = "Дата начала периода не может быть позже даты окончания.";
+            return;
+        }
 
         var filter = new AppointmentSearchRequest
         {
             DoctorId = _main.CurrentUser.UserId,
             SearchText = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
-            FromUtc = from.ToUniversalTime(),
-            ToUtc = to.ToUniversalTime(),
-            Status = AreAdditionalFiltersVisible ? SelectedStatus : null,
+            FromUtc = ToUtcStartOfLocalDate(fromDate),
+            ToUtc = ToUtcStartOfLocalDate(toDate.AddDays(1)),
+            Status = AreAdditionalFiltersVisible ? MapNullableStatus(SelectedStatusText) : null,
             IncludeDeleted = IncludeDeleted
         };
 
@@ -168,7 +198,7 @@ public class DoctorDashboardViewModel : ViewModelBase
         }
 
         foreach (var appointment in result.Data.OrderBy(x => x.StartAtUtc))
-            TodayAppointments.Add(appointment);
+            TodayAppointments.Add(new DoctorAppointmentCardItem(appointment));
     }
 
     private async Task ClearFiltersAsync()
@@ -176,21 +206,27 @@ public class DoctorDashboardViewModel : ViewModelBase
         SearchText = string.Empty;
         FilterFromDate = DateTimeOffset.Now.Date;
         FilterToDate = DateTimeOffset.Now.Date;
-        SelectedStatus = null;
+        SelectedStatusText = StatusOptions[0];
         IncludeDeleted = false;
 
         await SearchAppointmentsAsync();
     }
 
-    private async Task OpenReportAsync(AppointmentSummaryDto? appointment)
+    private async Task OpenReportAsync(DoctorAppointmentCardItem? item)
     {
         ErrorMessage = null;
         SuccessMessage = null;
 
-        if (appointment == null)
+        if (item == null)
             return;
 
-        var reportResult = await _reportService.GetByAppointmentIdAsync(appointment.Id);
+        if (item.Status is AppointmentStatus.Canceled or AppointmentStatus.NoShow)
+        {
+            ErrorMessage = "Для отменённой записи или неявки отчёт заполнять нельзя.";
+            return;
+        }
+
+        var reportResult = await _reportService.GetByAppointmentIdAsync(item.Id);
 
         if (!reportResult.IsSuccess || reportResult.Data == null)
         {
@@ -200,6 +236,7 @@ public class DoctorDashboardViewModel : ViewModelBase
 
         var editorVm = new ReportEditorViewModel(
             _main,
+            _appointmentService,
             _reportService,
             _templateService,
             _voiceApiService,
@@ -210,15 +247,21 @@ public class DoctorDashboardViewModel : ViewModelBase
         _main.UpdateCurrentView(editorVm);
     }
 
-    private async Task MarkNoShowAsync(AppointmentSummaryDto? appointment)
+    private async Task MarkNoShowAsync(DoctorAppointmentCardItem? item)
     {
         ErrorMessage = null;
         SuccessMessage = null;
 
-        if (appointment == null)
+        if (item == null)
             return;
 
-        var fullResult = await _appointmentService.GetByIdAsync(appointment.Id);
+        if (!item.CanMarkNoShow)
+        {
+            ErrorMessage = "Эту запись нельзя отметить как неявку.";
+            return;
+        }
+
+        var fullResult = await _appointmentService.GetByIdAsync(item.Id);
 
         if (!fullResult.IsSuccess || fullResult.Data == null)
         {
@@ -262,9 +305,29 @@ public class DoctorDashboardViewModel : ViewModelBase
             _main,
             _reportService,
             _templateService,
+            _appointmentService,
             _voiceApiService,
             _audioRecorderService);
 
         _main.UpdateCurrentView(reportsVm);
+    }
+
+    private static AppointmentStatus? MapNullableStatus(string? text)
+    {
+        return text switch
+        {
+            "Запланирована" => AppointmentStatus.Scheduled,
+            "В процессе" => AppointmentStatus.InProgress,
+            "Завершена" => AppointmentStatus.Completed,
+            "Отменена" => AppointmentStatus.Canceled,
+            "Неявка" => AppointmentStatus.NoShow,
+            _ => null
+        };
+    }
+
+    private static DateTime ToUtcStartOfLocalDate(DateTime date)
+    {
+        var localDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Local);
+        return localDateTime.ToUniversalTime();
     }
 }

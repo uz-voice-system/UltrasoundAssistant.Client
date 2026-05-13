@@ -5,7 +5,9 @@
              x:DataType="reportVm:ReportEditorViewModel"
              x:Name="Root">
 
-  <Grid Margin="14" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="3*,2*">
+  <Grid Margin="14"
+        RowDefinitions="Auto,Auto,*,Auto"
+        ColumnDefinitions="3*,2*">
 
     <Border Grid.Row="0"
             Grid.ColumnSpan="2"
@@ -19,13 +21,15 @@
       <DockPanel>
         <Button Content="← Назад"
                 Command="{Binding GoBackCommand}"
-                DockPanel.Dock="Left"/>
+                DockPanel.Dock="Left"
+                Padding="12,6"/>
 
         <StackPanel Margin="12,0,0,0">
           <TextBlock Text="Заполнение отчёта УЗИ"
                      FontSize="20"
                      FontWeight="Bold"/>
-          <TextBlock Text="{Binding Status, StringFormat='Статус: {0}'}"
+
+          <TextBlock Text="{Binding StatusText, StringFormat='Статус: {0}'}"
                      Foreground="#666"/>
         </StackPanel>
       </DockPanel>
@@ -40,21 +44,27 @@
             Padding="12"
             Margin="0,0,10,10">
 
-      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+      <Grid ColumnDefinitions="*,*,*"
+            ColumnSpacing="10">
+
         <StackPanel Grid.Column="0">
           <TextBlock Text="Пациент"/>
-          <TextBox Text="{Binding PatientName}" IsReadOnly="True"/>
+          <TextBox Text="{Binding PatientName}"
+                   IsReadOnly="True"/>
         </StackPanel>
 
         <StackPanel Grid.Column="1">
           <TextBlock Text="Шаблон"/>
-          <TextBox Text="{Binding TemplateName}" IsReadOnly="True"/>
+          <TextBox Text="{Binding TemplateName}"
+                   IsReadOnly="True"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2">
           <TextBlock Text="Время приёма"/>
-          <TextBox Text="{Binding AppointmentTimeText}" IsReadOnly="True"/>
+          <TextBox Text="{Binding AppointmentTimeText}"
+                   IsReadOnly="True"/>
         </StackPanel>
+
       </Grid>
     </Border>
 
@@ -76,14 +86,19 @@
                    TextWrapping="Wrap"
                    Foreground="#666"/>
 
-        <StackPanel Orientation="Horizontal" Spacing="8">
+        <StackPanel Orientation="Horizontal"
+                    Spacing="8">
+
           <Button Content="Начать запись"
                   Command="{Binding StartRecordingCommand}"
-                  IsEnabled="{Binding CanStartRecording}"/>
+                  IsEnabled="{Binding CanStartRecording}"
+                  Padding="12,6"/>
 
           <Button Content="Закончить запись"
                   Command="{Binding StopRecordingCommand}"
-                  IsEnabled="{Binding CanStopRecording}"/>
+                  IsEnabled="{Binding CanStopRecording}"
+                  Padding="12,6"/>
+
         </StackPanel>
       </StackPanel>
     </Border>
@@ -97,7 +112,9 @@
             Padding="10"
             Margin="0,0,10,10">
 
-      <Grid RowDefinitions="Auto,*" RowSpacing="10">
+      <Grid RowDefinitions="Auto,*"
+            RowSpacing="10">
+
         <TextBlock Grid.Row="0"
                    Text="Поля отчёта"
                    FontSize="18"
@@ -105,7 +122,7 @@
 
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Auto">
+                      HorizontalScrollBarVisibility="Disabled">
 
           <ItemsControl ItemsSource="{Binding ReportBlocks}">
             <ItemsControl.ItemTemplate>
@@ -125,69 +142,140 @@
                                  FontSize="17"
                                  FontWeight="Bold"/>
 
-                      <TextBlock Text="{Binding BlockPhrasesText, StringFormat='Фразы блока: {0}'}"
-                                 Foreground="#666"
-                                 TextWrapping="Wrap"
-                                 Margin="0,3,0,0"/>
+                      <Border Background="#FFF8E1"
+                              BorderBrush="#F2C94C"
+                              BorderThickness="1"
+                              CornerRadius="6"
+                              Padding="8"
+                              Margin="0,6,0,0">
+
+                        <StackPanel>
+                          <TextBlock Text="Фразы блока, которые можно произнести:"
+                                     FontWeight="Bold"
+                                     Foreground="#7A5B00"/>
+
+                          <TextBlock Text="{Binding BlockPhrasesText}"
+                                     Foreground="#7A5B00"
+                                     TextWrapping="Wrap"
+                                     Margin="0,3,0,0"/>
+                        </StackPanel>
+                      </Border>
                     </StackPanel>
-
-                    <Grid ColumnDefinitions="1.3*,2*,1.4*,1.2*"
-                          ColumnSpacing="8"
-                          Margin="18,0,0,0">
-
-                      <TextBlock Grid.Column="0"
-                                 Text="Поле"
-                                 FontWeight="Bold"
-                                 Foreground="#555"/>
-
-                      <TextBlock Grid.Column="1"
-                                 Text="Фразы"
-                                 FontWeight="Bold"
-                                 Foreground="#555"/>
-
-                      <TextBlock Grid.Column="2"
-                                 Text="Значение"
-                                 FontWeight="Bold"
-                                 Foreground="#555"/>
-
-                      <TextBlock Grid.Column="3"
-                                 Text="Норма"
-                                 FontWeight="Bold"
-                                 Foreground="#555"/>
-                    </Grid>
 
                     <ItemsControl ItemsSource="{Binding Fields}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="reportVm:ReportFieldEditorItem">
 
-                          <Grid ColumnDefinitions="1.3*,2*,1.4*,1.2*"
-                                ColumnSpacing="8"
-                                Margin="18,0,0,6">
+                          <Border Background="{Binding RecognitionBackground}"
+                                  BorderBrush="{Binding RecognitionBorderBrush}"
+                                  BorderThickness="2"
+                                  CornerRadius="8"
+                                  Padding="10"
+                                  Margin="18,0,0,8">
 
-                            <TextBlock Grid.Column="0"
-                                       Text="{Binding DisplayName}"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"/>
+                            <Grid ColumnDefinitions="2*,3*,1.5*"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  ColumnSpacing="10"
+                                  RowSpacing="8">
 
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding PhrasesText}"
-                                       Foreground="#666"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"/>
+                              <StackPanel Grid.Row="0"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="3">
 
-                            <TextBox Grid.Column="2"
-                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                     TextWrapping="Wrap"
-                                     MinWidth="170"
-                                     IsReadOnly="{Binding #Root.DataContext.IsCompletedOrArchived}"/>
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8">
+                                  <TextBlock Text="{Binding DisplayName}"
+                                             FontWeight="Bold"
+                                             FontSize="15"
+                                             TextWrapping="Wrap"/>
 
-                            <TextBlock Grid.Column="3"
-                                       Text="{Binding NormMessage}"
-                                       Foreground="#666"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"/>
+                                  <Border Background="#E8F1FF"
+                                          CornerRadius="10"
+                                          Padding="8,3"
+                                          IsVisible="{Binding HasRoleText}">
+                                    <TextBlock Text="{Binding RoleText}"
+                                               Foreground="#2457A6"
+                                               FontSize="12"
+                                               FontWeight="Bold"/>
+                                  </Border>
 
-                          </Grid>
+                                    <Border Background="#FFFFFF"
+                                          BorderBrush="{Binding RecognitionBorderBrush}"
+                                          BorderThickness="1"
+                                          CornerRadius="10"
+                                          Padding="8,3"
+                                          IsVisible="{Binding HasRecognitionInfo}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                      <TextBlock Text="{Binding RecognitionText}"
+                                                 Foreground="{Binding RecognitionForeground}"
+                                                 FontSize="12"
+                                                 FontWeight="Bold"/>
+
+                                      <TextBlock Text="{Binding ConfidenceText}"
+                                                 Foreground="{Binding RecognitionForeground}"
+                                                 FontSize="12"/>
+                                    </StackPanel>
+                                  </Border>
+                                </StackPanel>
+                              </StackPanel>
+
+                              <Border Grid.Row="1"
+                                      Grid.Column="0"
+                                      Grid.ColumnSpan="3"
+                                      Background="#F3F6FA"
+                                      BorderBrush="#DCE3EA"
+                                      BorderThickness="1"
+                                      CornerRadius="6"
+                                      Padding="8">
+
+                                <StackPanel>
+                                  <TextBlock Text="Фразы поля, которые можно произнести:"
+                                             FontWeight="Bold"
+                                             Foreground="#555"/>
+
+                                  <TextBlock Text="{Binding PhrasesText}"
+                                             Foreground="#555"
+                                             TextWrapping="Wrap"
+                                             Margin="0,3,0,0"/>
+                                </StackPanel>
+                              </Border>
+
+                              <StackPanel Grid.Row="2"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2">
+                                <TextBlock Text="Значение"
+                                           FontWeight="Bold"
+                                           Foreground="#555"/>
+
+                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="{Binding IsLongTextField}"
+                                         TextWrapping="Wrap"
+                                         MinHeight="{Binding EditorMinHeight}"
+                                         VerticalContentAlignment="Top"
+                                         IsReadOnly="{Binding #Root.DataContext.IsCompletedOrArchived}"/>
+                              </StackPanel>
+
+                              <StackPanel Grid.Row="2"
+                                          Grid.Column="2">
+                                <TextBlock Text="Норма / проверка"
+                                           FontWeight="Bold"
+                                           Foreground="#555"/>
+
+                                <Border Background="#F7F8FA"
+                                        BorderBrush="#DDDDDD"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="8"
+                                        MinHeight="42">
+
+                                  <TextBlock Text="{Binding NormMessage}"
+                                             Foreground="#666"
+                                             TextWrapping="Wrap"/>
+                                </Border>
+                              </StackPanel>
+
+                            </Grid>
+                          </Border>
 
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -203,40 +291,100 @@
       </Grid>
     </Border>
 
-    <Border Grid.Row="2"
-            Grid.Column="1"
-            Background="#F7F8FA"
-            BorderBrush="#DDDDDD"
-            BorderThickness="1"
-            CornerRadius="8"
-            Padding="12"
-            Margin="0,0,0,10">
+    <ScrollViewer Grid.Row="2"
+                  Grid.Column="1"
+                  VerticalScrollBarVisibility="Auto">
 
-      <Grid RowDefinitions="Auto,*,Auto,*" RowSpacing="8">
-        <TextBlock Grid.Row="0"
-                   Text="Результат распознавания"
-                   FontSize="18"
-                   FontWeight="Bold"/>
+      <StackPanel Spacing="10">
 
-        <TextBox Grid.Row="1"
-                 Text="{Binding RecognizedText}"
-                 AcceptsReturn="True"
-                 IsReadOnly="True"
-                 TextWrapping="Wrap"
-                 MinHeight="160"/>
+        <Border Background="#F7F8FA"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="12">
 
-        <TextBlock Grid.Row="2"
-                   Text="Не сопоставлено / требует проверки"
-                   FontWeight="Bold"/>
+          <StackPanel Spacing="8">
+            <TextBlock Text="Изображение УЗИ"
+                       FontSize="18"
+                       FontWeight="Bold"/>
 
-        <TextBox Grid.Row="3"
-                 Text="{Binding UnmatchedRecognitions}"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 VerticalContentAlignment="Top"
-                 MinHeight="200"/>
-      </Grid>
-    </Border>
+            <TextBlock Text="{Binding UltrasoundImageInfoText}"
+                       Foreground="#666"
+                       TextWrapping="Wrap"/>
+
+            <Border Background="#FFFFFF"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="8"
+                    MinHeight="180">
+
+              <Grid>
+                <TextBlock Text="Изображение не загружено"
+                           Foreground="#999"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding !HasUltrasoundImage}"/>
+
+                <Image Source="{Binding UltrasoundImagePreview}"
+                       Stretch="Uniform"
+                       MaxHeight="260"
+                       IsVisible="{Binding HasUltrasoundImage}"/>
+              </Grid>
+            </Border>
+
+            <StackPanel Orientation="Horizontal"
+                        Spacing="8">
+              <Button Content="Загрузить / заменить"
+                      Click="UploadImageButton_OnClick"
+                      IsEnabled="{Binding CanUploadImage}"
+                      Padding="12,6"/>
+
+              <Button Content="Удалить изображение"
+                      Command="{Binding DeleteImageCommand}"
+                      IsEnabled="{Binding CanDeleteImage}"
+                      Background="#E74C3C"
+                      Foreground="White"
+                      Padding="12,6"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Background="#F7F8FA"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="12">
+
+          <Grid RowDefinitions="Auto,160,Auto,220"
+                RowSpacing="8">
+
+            <TextBlock Grid.Row="0"
+                       Text="Результат распознавания"
+                       FontSize="18"
+                       FontWeight="Bold"/>
+
+            <TextBox Grid.Row="1"
+                     Text="{Binding RecognizedText}"
+                     AcceptsReturn="True"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     VerticalContentAlignment="Top"/>
+
+            <TextBlock Grid.Row="2"
+                       Text="Не сопоставлено / требует проверки"
+                       FontWeight="Bold"/>
+
+            <TextBox Grid.Row="3"
+                     Text="{Binding UnmatchedRecognitions}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalContentAlignment="Top"/>
+          </Grid>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
 
     <Border Grid.Row="3"
             Grid.ColumnSpan="2"
@@ -290,6 +438,7 @@
                 Background="White"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
+
           <StackPanel Spacing="12">
             <TextBlock Text="Идёт распознавание..."
                        FontSize="20"
@@ -305,6 +454,21 @@
                          Height="16"/>
           </StackPanel>
         </Border>
+      </Grid>
+    </Border>
+
+    <Border Grid.RowSpan="4"
+            Grid.ColumnSpan="2"
+            Background="#40000000"
+            IsVisible="{Binding IsBusy}"
+            ZIndex="900">
+
+      <Grid>
+        <ProgressBar Width="260"
+                     Height="16"
+                     IsIndeterminate="True"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"/>
       </Grid>
     </Border>
 

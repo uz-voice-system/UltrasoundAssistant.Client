@@ -8,21 +8,26 @@ using UltrasoundAssistant.DoctorClient.Models.Enums;
 using UltrasoundAssistant.DoctorClient.Models.Reads.Patients.Details;
 using UltrasoundAssistant.DoctorClient.Models.Reads.Patients.Search;
 using UltrasoundAssistant.DoctorClient.Services;
+using SharedBoolFilterOption = UltrasoundAssistant.DoctorClient.ViewModels.BoolFilterOption;
 
 namespace UltrasoundAssistant.DoctorClient.ViewModels.Patient;
 
-public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto>
+public partial class PatientsViewModel : CrudPageViewModelBase<PatientAdminListItem>
 {
     private readonly PatientApiService _patientService;
 
     private Guid? _editingPatientId;
     private int _editingPatientVersion;
-    private List<PatientDocumentDto> _editDocuments = [];
 
-    public ObservableCollection<PatientSummaryDto> Patients => Items;
+    public ObservableCollection<PatientAdminListItem> Patients => Items;
 
     public ObservableCollection<string> Genders { get; } = new();
-    public ObservableCollection<PatientDocumentType?> DocumentTypes { get; } = new();
+
+    public ObservableCollection<string> DocumentTypeOptions { get; } = new();
+
+    public ObservableCollection<SharedBoolFilterOption> DeletedOptions { get; } = new();
+
+    public ObservableCollection<EditablePatientDocumentItem> EditableDocuments { get; } = new();
 
     private bool _areAdditionalFiltersVisible;
     public bool AreAdditionalFiltersVisible
@@ -31,18 +36,11 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         set => SetProperty(ref _areAdditionalFiltersVisible, value);
     }
 
-    private string _searchText = string.Empty;
-    public string SearchText
+    private string _searchFullName = string.Empty;
+    public string SearchFullName
     {
-        get => _searchText;
-        set => SetProperty(ref _searchText, value);
-    }
-
-    private string _filterFullName = string.Empty;
-    public string FilterFullName
-    {
-        get => _filterFullName;
-        set => SetProperty(ref _filterFullName, value);
+        get => _searchFullName;
+        set => SetProperty(ref _searchFullName, value);
     }
 
     private DateTimeOffset? _filterBirthDate;
@@ -59,11 +57,11 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         set => SetProperty(ref _filterPhoneNumber, value);
     }
 
-    private PatientDocumentType? _filterDocumentType;
-    public PatientDocumentType? FilterDocumentType
+    private string _selectedDocumentTypeText = "Любой тип документа";
+    public string SelectedDocumentTypeText
     {
-        get => _filterDocumentType;
-        set => SetProperty(ref _filterDocumentType, value);
+        get => _selectedDocumentTypeText;
+        set => SetProperty(ref _selectedDocumentTypeText, value);
     }
 
     private string _filterDocumentSeries = string.Empty;
@@ -80,11 +78,11 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         set => SetProperty(ref _filterDocumentNumber, value);
     }
 
-    private bool _includeDeleted;
-    public bool IncludeDeleted
+    private SharedBoolFilterOption? _selectedDeletedOption;
+    public SharedBoolFilterOption? SelectedDeletedOption
     {
-        get => _includeDeleted;
-        set => SetProperty(ref _includeDeleted, value);
+        get => _selectedDeletedOption;
+        set => SetProperty(ref _selectedDeletedOption, value);
     }
 
     private string _editFullName = string.Empty;
@@ -123,17 +121,28 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
     }
 
     public ICommand LoadPatientsCommand { get; }
+
     public ICommand SearchPatientsCommand { get; }
+
     public ICommand ClearFiltersCommand { get; }
-    public ICommand ToggleAdditionalFiltersCommand { get; }
 
     public ICommand AddPatientCommand { get; }
+
     public ICommand EditPatientCommand { get; }
+
     public ICommand DeletePatientCommand { get; }
+
     public ICommand SavePatientCommand { get; }
+
     public ICommand CancelEditCommand { get; }
 
-    public PatientsViewModel(MainWindowViewModel main, PatientApiService patientService)
+    public ICommand AddDocumentCommand { get; }
+
+    public ICommand RemoveDocumentCommand { get; }
+
+    public PatientsViewModel(
+        MainWindowViewModel main,
+        PatientApiService patientService)
         : base(main)
     {
         _patientService = patientService;
@@ -141,25 +150,42 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         Genders.Add("Мужской");
         Genders.Add("Женский");
 
-        DocumentTypes.Add(null);
+        DocumentTypeOptions.Add("Любой тип документа");
+
         foreach (var type in Enum.GetValues<PatientDocumentType>())
-            DocumentTypes.Add(type);
+            DocumentTypeOptions.Add(GetDocumentTypeText(type));
+
+        SelectedDocumentTypeText = DocumentTypeOptions[0];
+
+        DeletedOptions.Add(new SharedBoolFilterOption("Только активные", false));
+        DeletedOptions.Add(new SharedBoolFilterOption("Активные и удалённые", true));
+        SelectedDeletedOption = DeletedOptions[0];
 
         LoadPatientsCommand = new AsyncRelayCommand(LoadPatientsAsync);
         SearchPatientsCommand = new AsyncRelayCommand(SearchPatientsAsync);
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
 
-        ToggleAdditionalFiltersCommand = new RelayCommandSync(_ => { AreAdditionalFiltersVisible = !AreAdditionalFiltersVisible; });
-
         AddPatientCommand = new RelayCommandSync(_ => OpenEditPanelForAdd());
 
-        EditPatientCommand = new RelayCommand<PatientSummaryDto?>(async p => { await OpenEditPanelForEditAsync(p); });
+        EditPatientCommand = new RelayCommand<PatientAdminListItem?>(async patient =>
+        {
+            await OpenEditPanelForEditAsync(patient);
+        });
 
-        DeletePatientCommand = new RelayCommand<PatientSummaryDto?>(async p => { await DeletePatientAsync(p); });
+        DeletePatientCommand = new RelayCommand<PatientAdminListItem?>(async patient =>
+        {
+            await DeletePatientAsync(patient);
+        });
 
         SavePatientCommand = new AsyncRelayCommand(SavePatientAsync);
-
         CancelEditCommand = new RelayCommandSync(_ => CloseEditPanel());
+
+        AddDocumentCommand = new RelayCommandSync(_ => AddDocument());
+
+        RemoveDocumentCommand = new RelayCommand<EditablePatientDocumentItem?>(document =>
+        {
+            RemoveDocument(document);
+        });
     }
 
     private async Task LoadPatientsAsync()
@@ -170,7 +196,7 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         var result = await _patientService.GetAllAsync();
 
         if (result.IsSuccess && result.Data != null)
-            ReplaceItems(result.Data);
+            ReplacePatients(result.Data);
         else
             SetError(result.ErrorMessage);
     }
@@ -181,43 +207,69 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
 
         var filter = new PatientSearchRequest
         {
-            SearchText = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
-            FullName = string.IsNullOrWhiteSpace(FilterFullName) ? null : FilterFullName.Trim(),
-            BirthDate = FilterBirthDate?.DateTime.Date,
-            PhoneNumber = string.IsNullOrWhiteSpace(FilterPhoneNumber) ? null : FilterPhoneNumber.Trim(),
-            DocumentType = FilterDocumentType,
-            DocumentSeries = string.IsNullOrWhiteSpace(FilterDocumentSeries) ? null : FilterDocumentSeries.Trim(),
-            DocumentNumber = string.IsNullOrWhiteSpace(FilterDocumentNumber) ? null : FilterDocumentNumber.Trim(),
-            IncludeDeleted = IncludeDeleted
+            SearchText = null,
+
+            FullName = string.IsNullOrWhiteSpace(SearchFullName)
+                ? null
+                : SearchFullName.Trim(),
+
+            BirthDate = AreAdditionalFiltersVisible
+                ? FilterBirthDate?.Date
+                : null,
+
+            PhoneNumber = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterPhoneNumber)
+                ? FilterPhoneNumber.Trim()
+                : null,
+
+            DocumentType = AreAdditionalFiltersVisible
+                ? MapNullableDocumentType(SelectedDocumentTypeText)
+                : null,
+
+            DocumentSeries = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterDocumentSeries)
+                ? FilterDocumentSeries.Trim()
+                : null,
+
+            DocumentNumber = AreAdditionalFiltersVisible && !string.IsNullOrWhiteSpace(FilterDocumentNumber)
+                ? FilterDocumentNumber.Trim()
+                : null,
+
+            IncludeDeleted = SelectedDeletedOption?.Value == true
         };
 
         var result = await _patientService.SearchAsync(filter);
 
         if (result.IsSuccess && result.Data != null)
-            ReplaceItems(result.Data);
+            ReplacePatients(result.Data);
         else
             SetError(result.ErrorMessage);
     }
 
     private async Task ClearFiltersAsync()
     {
-        SearchText = string.Empty;
-        FilterFullName = string.Empty;
+        SearchFullName = string.Empty;
         FilterBirthDate = null;
         FilterPhoneNumber = string.Empty;
-        FilterDocumentType = null;
+        SelectedDocumentTypeText = DocumentTypeOptions[0];
         FilterDocumentSeries = string.Empty;
         FilterDocumentNumber = string.Empty;
-        IncludeDeleted = false;
+        SelectedDeletedOption = DeletedOptions[0];
 
         await LoadPatientsAsync();
+    }
+
+    private void ReplacePatients(List<PatientSummaryDto> patients)
+    {
+        ReplaceItems(patients
+            .Select(x => new PatientAdminListItem(x))
+            .OrderBy(x => x.IsDeleted)
+            .ThenBy(x => x.FullName)
+            .ToList());
     }
 
     private void OpenEditPanelForAdd()
     {
         _editingPatientId = null;
         _editingPatientVersion = 0;
-        _editDocuments = [];
 
         OpenEditPanel("Добавить пациента");
 
@@ -226,9 +278,11 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         EditSelectedGender = Genders.Count > 0 ? Genders[0] : null;
         EditPhoneNumber = string.Empty;
         EditEmail = string.Empty;
+
+        EditableDocuments.Clear();
     }
 
-    private async Task OpenEditPanelForEditAsync(PatientSummaryDto? patient)
+    private async Task OpenEditPanelForEditAsync(PatientAdminListItem? patient)
     {
         ClearError();
 
@@ -247,7 +301,6 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
 
         _editingPatientId = full.Id;
         _editingPatientVersion = full.Version;
-        _editDocuments = full.Documents ?? [];
 
         OpenEditPanel("Редактировать пациента");
 
@@ -256,6 +309,25 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         EditSelectedGender = full.Gender;
         EditPhoneNumber = full.PhoneNumber ?? string.Empty;
         EditEmail = full.Email ?? string.Empty;
+
+        EditableDocuments.Clear();
+
+        foreach (var document in full.Documents ?? [])
+        {
+            EditableDocuments.Add(new EditablePatientDocumentItem
+            {
+                Id = document.Id,
+                DocumentTypeText = GetDocumentTypeText(document.DocumentType),
+                Series = document.Series ?? string.Empty,
+                Number = document.Number,
+                IssuedBy = document.IssuedBy ?? string.Empty,
+                IssueDate = document.IssueDate.HasValue
+                    ? new DateTimeOffset(document.IssueDate.Value)
+                    : null,
+                DepartmentCode = document.DepartmentCode ?? string.Empty,
+                Organization = document.Organization ?? string.Empty
+            });
+        }
     }
 
     protected override void CloseEditPanel()
@@ -264,7 +336,37 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
 
         _editingPatientId = null;
         _editingPatientVersion = 0;
-        _editDocuments = [];
+
+        EditFullName = string.Empty;
+        EditBirthDate = null;
+        EditSelectedGender = null;
+        EditPhoneNumber = string.Empty;
+        EditEmail = string.Empty;
+
+        EditableDocuments.Clear();
+    }
+
+    private void AddDocument()
+    {
+        EditableDocuments.Add(new EditablePatientDocumentItem
+        {
+            Id = Guid.NewGuid(),
+            DocumentTypeText = "Паспорт",
+            Series = string.Empty,
+            Number = string.Empty,
+            IssuedBy = string.Empty,
+            IssueDate = null,
+            DepartmentCode = string.Empty,
+            Organization = string.Empty
+        });
+    }
+
+    private void RemoveDocument(EditablePatientDocumentItem? document)
+    {
+        if (document == null)
+            return;
+
+        EditableDocuments.Remove(document);
     }
 
     private async Task SavePatientAsync()
@@ -283,17 +385,22 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
             return;
         }
 
+        var documents = BuildDocuments();
+
+        if (documents == null)
+            return;
+
         if (_editingPatientId == null)
         {
             var command = new CreatePatientCommand
             {
                 PatientId = Guid.NewGuid(),
                 FullName = EditFullName.Trim(),
-                BirthDate = EditBirthDate.Value.DateTime.Date,
+                BirthDate = ToUtcDate(EditBirthDate.Value),
                 Gender = EditSelectedGender,
                 PhoneNumber = string.IsNullOrWhiteSpace(EditPhoneNumber) ? null : EditPhoneNumber.Trim(),
                 Email = string.IsNullOrWhiteSpace(EditEmail) ? null : EditEmail.Trim(),
-                Documents = _editDocuments
+                Documents = documents
             };
 
             var result = await _patientService.CreateAsync(command);
@@ -311,11 +418,11 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
                 PatientId = _editingPatientId.Value,
                 ExpectedVersion = _editingPatientVersion,
                 FullName = EditFullName.Trim(),
-                BirthDate = EditBirthDate.Value.DateTime.Date,
+                BirthDate = ToUtcDate(EditBirthDate.Value),
                 Gender = EditSelectedGender,
                 PhoneNumber = string.IsNullOrWhiteSpace(EditPhoneNumber) ? null : EditPhoneNumber.Trim(),
                 Email = string.IsNullOrWhiteSpace(EditEmail) ? null : EditEmail.Trim(),
-                Documents = _editDocuments
+                Documents = documents
             };
 
             var result = await _patientService.UpdateAsync(command);
@@ -328,10 +435,40 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         }
 
         CloseEditPanel();
-        await SearchPatientsAsync();
+        RefreshLaterIfCurrent(SearchPatientsAsync);
     }
 
-    private async Task DeletePatientAsync(PatientSummaryDto? patient)
+    private List<PatientDocumentDto>? BuildDocuments()
+    {
+        var documents = new List<PatientDocumentDto>();
+
+        foreach (var document in EditableDocuments)
+        {
+            if (string.IsNullOrWhiteSpace(document.Number))
+            {
+                SetError("У каждого документа должен быть указан номер.");
+                return null;
+            }
+
+            documents.Add(new PatientDocumentDto
+            {
+                Id = document.Id == Guid.Empty ? Guid.NewGuid() : document.Id,
+                DocumentType = MapDocumentType(document.DocumentTypeText),
+                Series = string.IsNullOrWhiteSpace(document.Series) ? null : document.Series.Trim(),
+                Number = document.Number.Trim(),
+                IssuedBy = string.IsNullOrWhiteSpace(document.IssuedBy) ? null : document.IssuedBy.Trim(),
+                IssueDate = document.IssueDate.HasValue
+                    ? ToUtcDate(document.IssueDate.Value)
+                    : null,
+                DepartmentCode = string.IsNullOrWhiteSpace(document.DepartmentCode) ? null : document.DepartmentCode.Trim(),
+                Organization = string.IsNullOrWhiteSpace(document.Organization) ? null : document.Organization.Trim()
+            });
+        }
+
+        return documents;
+    }
+
+    private async Task DeletePatientAsync(PatientAdminListItem? patient)
     {
         ClearError();
 
@@ -347,8 +484,45 @@ public partial class PatientsViewModel : CrudPageViewModelBase<PatientSummaryDto
         var result = await _patientService.DeleteAsync(command);
 
         if (result.IsSuccess)
-            await SearchPatientsAsync();
+            RefreshLaterIfCurrent(SearchPatientsAsync);
         else
             SetError(result.ErrorMessage);
+    }
+
+    private static PatientDocumentType? MapNullableDocumentType(string? text)
+    {
+        return text switch
+        {
+            "Паспорт" => PatientDocumentType.Passport,
+            "СНИЛС" => PatientDocumentType.Snils,
+            "Полис ОМС" => PatientDocumentType.OmsPolicy,
+            "Медицинская карта" => PatientDocumentType.MedicalCard,
+            "Иной документ" => PatientDocumentType.Other,
+            _ => null
+        };
+    }
+
+    private static PatientDocumentType MapDocumentType(string? text)
+    {
+        return MapNullableDocumentType(text) ?? PatientDocumentType.Passport;
+    }
+
+    private static string GetDocumentTypeText(PatientDocumentType type)
+    {
+        return type switch
+        {
+            PatientDocumentType.Passport => "Паспорт",
+            PatientDocumentType.Snils => "СНИЛС",
+            PatientDocumentType.OmsPolicy => "Полис ОМС",
+            PatientDocumentType.MedicalCard => "Медицинская карта",
+            PatientDocumentType.Other => "Иной документ",
+            _ => type.ToString()
+        };
+    }
+
+    private static DateTime ToUtcDate(DateTimeOffset value)
+    {
+        var date = value.Date;
+        return new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
     }
 }

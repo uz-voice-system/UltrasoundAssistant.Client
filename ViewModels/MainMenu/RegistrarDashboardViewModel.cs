@@ -24,7 +24,8 @@ public class RegistrarDashboardViewModel : ViewModelBase
         UserApiService userApiService,
         TemplateApiService templateApiService,
         AppointmentApiService appointmentApiService,
-        ReportApiService reportApiService)
+        ReportApiService reportApiService,
+        ScheduleApiService scheduleApiService)
     {
         _main = main;
 
@@ -36,7 +37,8 @@ public class RegistrarDashboardViewModel : ViewModelBase
             userApiService,
             templateApiService,
             appointmentApiService,
-            reportApiService);
+            reportApiService,
+            scheduleApiService);
 
         LogoutCommand = main.LogoutCommand;
 

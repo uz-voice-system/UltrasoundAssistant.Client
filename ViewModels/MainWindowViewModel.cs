@@ -80,7 +80,8 @@ public partial class MainWindowViewModel : ViewModelBase
             userApiService,
             templateApiService,
             appointmentApiService,
-            reportApiService
+            reportApiService,
+            scheduleApiService
         );
 
         CurrentView = _loginViewModel;
